@@ -1,0 +1,10 @@
+Import('env')
+
+env = env.Clone()
+env.CxxTest('symbols_test.h')
+
+# Local Variables:
+# mode: Python
+# indent-tabs-mode: nil
+# End:
+# vim: et:sw=4:ts=8:  
