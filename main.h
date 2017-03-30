@@ -1,5 +1,4 @@
-#ifndef MAIN_H
-#define MAIN_H
+#pragma once
 
 #include <sstream>
 #include <string>
@@ -12,13 +11,13 @@ std::vector<std::string>
 split(const std::string& s, char delimiter = ',')
 {
     std::vector<std::string> tokens;
-    std::stringstream        ss(s);
-    std::string              token;
 
-    while (getline(ss, token, delimiter)) {
-        tokens.push_back(token);
-    }
+    size_t begin = 0, end;
+    do {
+        end = s.find_first_of(delimiter, begin);
+        tokens.emplace_back(s.substr(begin, end - begin));
+        begin = end + 1;
+    } while (end < std::string::npos);
+
     return tokens;
 }
-
-#endif // MAIN_H
