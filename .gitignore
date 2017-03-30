@@ -1,10 +1,5 @@
 __pycache__/
-CMakeFiles
-CMakeCache.txt
-CTestTestfile.cmake
-Makefile
-cmake_install.cmake
+build/
+.vscode/.cmaketools.json
 compile_commands.json
-cpp-boilerplate
-Testing/
 *~
