@@ -8,16 +8,16 @@
  * Utility function to split a string by the delimiter
  */
 std::vector<std::string>
-split(const std::string& s, char delimiter = ',')
+split(const std::string& record, char delimiter = ',')
 {
-    std::vector<std::string> tokens;
+    std::vector<std::string> fields;
 
     size_t begin = 0, end;
     do {
-        end = s.find_first_of(delimiter, begin);
-        tokens.emplace_back(s.substr(begin, end - begin));
+        end = record.find_first_of(delimiter, begin);
+        fields.push_back(record.substr(begin, end - begin));
         begin = end + 1;
-    } while (end < std::string::npos);
+    } while (end != std::string::npos);
 
-    return tokens;
+    return fields;
 }
