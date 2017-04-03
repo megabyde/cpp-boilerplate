@@ -10,7 +10,7 @@ hello()
 }
 
 int
-main(int argc, char** argv)
+main(int argc, const char* argv[])
 {
     std::thread t{hello};
     t.join();
