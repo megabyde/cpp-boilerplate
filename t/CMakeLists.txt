@@ -1,3 +1,8 @@
-add_executable(main_test main_test.cpp)
-add_test(main_test main_test)
-target_link_libraries(main_test gtest gmock gmock_main)
+file(GLOB TESTS RELATIVE ${CMAKE_CURRENT_LIST_DIR} *_test.cpp)
+
+foreach(test ${TESTS})
+  string(REPLACE _test.cpp _test target ${test})
+  add_executable(${target} ${test})
+  add_test(NAME ${target} COMMAND ${target})
+  target_link_libraries(${target} gtest gmock gmock_main)
+endforeach()
