@@ -1,13 +1,12 @@
 #pragma once
 
-#include <sstream>
 #include <string>
 #include <vector>
 
 /**
  * Utility function to split a string by the delimiter
  */
-std::vector<std::string>
+inline std::vector<std::string>
 split(const std::string& record, char delimiter = ',')
 {
     std::vector<std::string> fields;
