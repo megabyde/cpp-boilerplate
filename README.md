@@ -1,4 +1,5 @@
 # C++ Boilerplate
+[![Build](https://github.com/megabyde/cpp-boilerplate/actions/workflows/build.yml/badge.svg)](https://github.com/megabyde/cpp-boilerplate/actions/workflows/build.yml)
 
 ## Overview
 
