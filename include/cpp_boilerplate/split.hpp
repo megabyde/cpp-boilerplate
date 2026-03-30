@@ -1,22 +1,22 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 
-/**
- * Utility function to split a string by the delimiter
- */
 inline std::vector<std::string>
 split(std::string_view record, char delimiter = ',')
 {
     std::vector<std::string> fields;
 
-    size_t begin = 0, end;
+    std::size_t begin = 0;
+    std::size_t end   = 0;
+
     do {
-        end = record.find_first_of(delimiter, begin);
+        end = record.find(delimiter, begin);
         fields.emplace_back(record.substr(begin, end - begin));
         begin = end + 1;
-    } while (end != std::string::npos);
+    } while (end != std::string_view::npos);
 
     return fields;
 }
