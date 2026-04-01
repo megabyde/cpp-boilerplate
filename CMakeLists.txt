@@ -25,7 +25,6 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
     )
 endif()
 
-find_package(Threads REQUIRED)
 find_package(Boost REQUIRED)
 
 function(enable_project_warnings target)
@@ -56,7 +55,6 @@ target_link_libraries(
     cpp-boilerplate
     PRIVATE
         Boost::headers
-        Threads::Threads
 )
 enable_project_warnings(cpp-boilerplate)
 enable_coverage(cpp-boilerplate)

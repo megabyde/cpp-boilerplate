@@ -21,7 +21,8 @@ CMAKE_PRESET_debug := conan-debug
 CMAKE_PRESET_release := conan-release
 CMAKE_CONFIGURE_ARGS_debug := -DCPP_BOILERPLATE_ENABLE_COVERAGE=ON
 CMAKE_CONFIGURE_ARGS_release :=
-LCOV_IGNORE_ERRORS_Darwin := format,format,unsupported
+LCOV_IGNORE_ERRORS_Linux := mismatch
+LCOV_IGNORE_ERRORS_Darwin := format,format,mismatch,unsupported
 LCOV_IGNORE_ERRORS ?= $(LCOV_IGNORE_ERRORS_$(UNAME_S))
 LCOV_CAPTURE_ARGS := $(if $(LCOV_IGNORE_ERRORS),--ignore-errors $(LCOV_IGNORE_ERRORS),)
 
@@ -109,7 +110,7 @@ coverage: build-debug ## Generate an LCOV report under build/debug/coverage-repo
 	$(GENHTML) $(BUILD_DIR_debug)/coverage.info --output-directory $(BUILD_DIR_debug)/coverage-report
 
 .PHONY: lint
-lint: $(BUILD_DIR_debug)/.cmake.stamp ## Run clang-tidy against the debug compilation database
+lint: configure-debug ## Run clang-tidy against the debug compilation database
 	$(call require-tool,$(CLANG_TIDY))
 	@$(CLANG_TIDY) -p $(BUILD_DIR_debug) $(TIDY_SOURCES)
 
