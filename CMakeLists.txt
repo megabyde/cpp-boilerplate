@@ -12,7 +12,19 @@ include(CTest)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(Threads REQUIRED)
+option(CPP_BOILERPLATE_ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
+
+if(CMAKE_EXPORT_COMPILE_COMMANDS)
+    file(REMOVE ${PROJECT_SOURCE_DIR}/compile_commands.json)
+    file(
+        CREATE_LINK
+        ${CMAKE_BINARY_DIR}/compile_commands.json
+        ${PROJECT_SOURCE_DIR}/compile_commands.json
+        SYMBOLIC
+        COPY_ON_ERROR
+    )
+endif()
+
 find_package(Boost REQUIRED)
 
 function(enable_project_warnings target)
@@ -23,6 +35,19 @@ function(enable_project_warnings target)
     endif()
 endfunction()
 
+function(enable_coverage target)
+    if(NOT CPP_BOILERPLATE_ENABLE_COVERAGE)
+        return()
+    endif()
+
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+        message(FATAL_ERROR "Coverage instrumentation requires GCC, Clang, or AppleClang")
+    endif()
+
+    target_compile_options(${target} PRIVATE -O0 -g --coverage)
+    target_link_options(${target} PRIVATE --coverage)
+endfunction()
+
 add_executable(cpp-boilerplate src/main.cpp)
 target_compile_features(cpp-boilerplate PRIVATE cxx_std_23)
 target_include_directories(cpp-boilerplate PRIVATE ${PROJECT_SOURCE_DIR}/include)
@@ -30,9 +55,9 @@ target_link_libraries(
     cpp-boilerplate
     PRIVATE
         Boost::headers
-        Threads::Threads
 )
 enable_project_warnings(cpp-boilerplate)
+enable_coverage(cpp-boilerplate)
 
 if(BUILD_TESTING)
     find_package(GTest CONFIG REQUIRED)
@@ -48,5 +73,6 @@ if(BUILD_TESTING)
             GTest::gtest_main
     )
     enable_project_warnings(split_test)
+    enable_coverage(split_test)
     gtest_discover_tests(split_test)
 endif()

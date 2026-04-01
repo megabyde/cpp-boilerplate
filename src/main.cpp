@@ -1,5 +1,5 @@
 #include <iostream>
-#include <thread>
+#include <exception>
 
 #include <cpp_boilerplate/record_summary.hpp>
 
@@ -17,6 +17,13 @@ hello()
 int
 main()
 {
-    std::jthread worker{hello};
-    return 0;
+    try {
+        hello();
+        return 0;
+    }
+    catch (const std::exception& error) {
+        std::cerr << "fatal error: " << error.what() << '\n';
+    }
+
+    return 1;
 }
