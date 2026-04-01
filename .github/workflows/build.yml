@@ -8,31 +8,30 @@ on:
 
 jobs:
   quality:
+    name: Quality
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
+    - name: Check formatting
+      run: make format-check
+
     - name: Set up Conan
       uses: conan-io/setup-conan@v1
 
-    - name: Detect Conan profile
-      run: make conan-profile
-
-    - name: Check Formatting
-      run: make format-check
-
-    - name: Run Clang-Tidy
+    - name: Run clang-tidy
       run: make lint
 
-  build:
+  debug:
+    name: Debug (${{ matrix.os }})
     needs: quality
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        target: [debug, release]
+        os: [ubuntu-latest, macos-latest]
 
     steps:
     - name: Checkout
@@ -41,8 +40,38 @@ jobs:
     - name: Set up Conan
       uses: conan-io/setup-conan@v1
 
-    - name: Detect Conan profile
-      run: make conan-profile
+    - name: Install lcov
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt-get update && sudo apt-get install --yes lcov
 
-    - name: Build And Test (${{ matrix.target }})
-      run: make ${{ matrix.target }}
+    - name: Install lcov
+      if: matrix.os == 'macos-latest'
+      run: brew install lcov
+
+    - name: Run debug pipeline
+      run: make coverage
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report-${{ matrix.os }}
+        path: build/debug/coverage-report
+
+  release:
+    name: Release (${{ matrix.os }})
+    needs: quality
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Conan
+      uses: conan-io/setup-conan@v1
+
+    - name: Run release pipeline
+      run: make release
