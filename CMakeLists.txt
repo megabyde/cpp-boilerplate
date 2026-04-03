@@ -12,7 +12,8 @@ include(CTest)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(CPP_BOILERPLATE_ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
+option(ENABLE_ASAN "Enable address sanitizer instrumentation" OFF)
+option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
 
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
     file(REMOVE ${PROJECT_SOURCE_DIR}/compile_commands.json)
@@ -25,7 +26,7 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
     )
 endif()
 
-find_package(Boost 1.74 REQUIRED)
+find_package(Boost 1.74 CONFIG REQUIRED)
 
 function(enable_project_warnings target)
     if(MSVC)
@@ -35,8 +36,21 @@ function(enable_project_warnings target)
     endif()
 endfunction()
 
+function(enable_sanitizers target)
+    if(NOT ENABLE_ASAN)
+        return()
+    endif()
+
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+        message(FATAL_ERROR "Address sanitizer requires GCC, Clang, or AppleClang")
+    endif()
+
+    target_compile_options(${target} PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+    target_link_options(${target} PRIVATE -fsanitize=address)
+endfunction()
+
 function(enable_coverage target)
-    if(NOT CPP_BOILERPLATE_ENABLE_COVERAGE)
+    if(NOT ENABLE_COVERAGE)
         return()
     endif()
 
@@ -57,6 +71,7 @@ target_link_libraries(
         Boost::headers
 )
 enable_project_warnings(cpp-boilerplate)
+enable_sanitizers(cpp-boilerplate)
 enable_coverage(cpp-boilerplate)
 
 if(BUILD_TESTING)
@@ -73,6 +88,7 @@ if(BUILD_TESTING)
             GTest::gtest_main
     )
     enable_project_warnings(split_test)
+    enable_sanitizers(split_test)
     enable_coverage(split_test)
     gtest_discover_tests(split_test)
 endif()

@@ -15,136 +15,112 @@ ifneq ($(VERBOSE),1)
 .SILENT:
 endif
 
-CONAN_INSTALL_ARGS ?= --build=missing
-PRESETS := debug release
-BUILD_DIR_debug := build/debug
-BUILD_DIR_release := build/release
-BUILD_TYPE_debug := Debug
-BUILD_TYPE_release := Release
-CMAKE_PRESET_debug := debug
-CMAKE_PRESET_release := release
-CMAKE_CONFIGURE_ARGS_debug := -DCPP_BOILERPLATE_ENABLE_COVERAGE=ON
-CMAKE_CONFIGURE_ARGS_release :=
+CONAN_INSTALL_ARGS ?= -s compiler.cppstd=23 --build=missing --lockfile=conan.lock
+FORMAT_FILES := $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
+TIDY_SOURCES := $(shell find src tests -type f -name '*.cpp')
+CONAN_BUILD_TYPE_debug := Debug
+CONAN_BUILD_TYPE_release := Release
+CONAN_BUILD_TYPE_asan := Debug
+CONAN_OPTIONS_asan := -o '&:asan=True'
+CMAKE_CONFIGURE_ARGS_asan := --fresh
+RUN_TESTS_release := 1
+RUN_TESTS_asan := 1
 LCOV_IGNORE_ERRORS_Linux := mismatch
 LCOV_IGNORE_ERRORS_Darwin := format,format,mismatch,unsupported
 LCOV_IGNORE_ERRORS ?= $(LCOV_IGNORE_ERRORS_$(UNAME_S))
 LCOV_CAPTURE_ARGS := $(if $(LCOV_IGNORE_ERRORS),--ignore-errors $(LCOV_IGNORE_ERRORS),)
 
-STAMP_FILES := $(foreach preset,$(PRESETS),$(BUILD_DIR_$(preset))/.conan.stamp $(BUILD_DIR_$(preset))/.cmake.stamp)
-
-CONAN_INPUTS := conanfile.py conan.lock
-CONFIGURE_INPUTS := CMakeLists.txt CMakePresets.json
-FORMAT_FILES := $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
-TIDY_SOURCES := $(shell find src tests -type f -name '*.cpp')
-
 define require-tool
-	@command -v $(1) >/dev/null || { echo "$(1) not found"; exit 1; }
+	command -v $(1) >/dev/null || { echo "$(1) not found"; exit 1; }
 endef
-
-.PRECIOUS: $(STAMP_FILES)
 
 .PHONY: help
 help: ## Show available targets
-	@printf "Available targets:\n"
-	@sed -n 's/^\([[:alnum:]_%.-][^:]*\):.*##[[:space:]]*\(.*\)$$/\1\t\2/p' $(MAKEFILE_LIST) | \
+	printf "Available targets:\n"
+	sed -n 's/^\([[:alnum:]_%.-][^:]*\):.*##[[:space:]]*\(.*\)$$/\1\t\2/p' $(MAKEFILE_LIST) | \
 	while IFS=$$(printf '\t') read -r target description; do \
-		printf "  %-24s %s\n" "$$target" "$$description"; \
+		printf "  %-20s %s\n" "$$target" "$$description"; \
 	done
 
 .PHONY: conan-profile
 conan-profile: ## Detect the default Conan profile for this machine
-	@echo "Detecting Conan profile..."
+	echo "Detecting Conan profile..."
 	$(CONAN) profile detect --force
 
-.PHONY: conan-%
-conan-%: build/%/.conan.stamp ## Install Conan dependencies for a preset, e.g. make conan-debug
-	@:
+.PHONY: conan-debug conan-release conan-asan
+conan-debug conan-release conan-asan: conan-%: ## Generate Conan presets and toolchain files for a public preset
+	echo "Installing Conan dependencies ($*)..."
+	$(CONAN) install . -s build_type=$(CONAN_BUILD_TYPE_$*) $(CONAN_OPTIONS_$*) $(CONAN_INSTALL_ARGS)
 
-$(BUILD_DIR_debug)/.conan.stamp $(BUILD_DIR_release)/.conan.stamp: $(CONAN_INPUTS)
-	@echo "Installing Conan dependencies ($(notdir $(@D)))..."
-	mkdir -p $(@D)
-	$(CONAN) install . \
-		--output-folder=$(@D) \
-		$(CONAN_INSTALL_ARGS) \
-		-c tools.cmake.cmaketoolchain:generator=Ninja \
-		--lockfile=conan.lock \
-		-s build_type=$(BUILD_TYPE_$(notdir $(@D)))
-	touch $@
+.PHONY: bootstrap
+bootstrap: conan-debug conan-release ## Generate Conan presets for the public debug, release, and ci presets
 
-.PHONY: configure-%
-configure-%: build/%/.cmake.stamp ## Configure CMake for a preset, e.g. make configure-debug
-	@:
+.PHONY: debug release asan
+debug release asan: %: conan-%
+	echo "Configuring CMake ($@)..."
+	$(CMAKE) --preset $@ $(CMAKE_CONFIGURE_ARGS_$@)
+	echo "Building ($@)..."
+	$(CMAKE) --build --preset $@
+	$(if $(RUN_TESTS_$@),echo "Running tests ($@)..."; $(CTEST) --preset $@)
 
-$(BUILD_DIR_debug)/.cmake.stamp $(BUILD_DIR_release)/.cmake.stamp: $(CONFIGURE_INPUTS)
-$(BUILD_DIR_debug)/.cmake.stamp: $(BUILD_DIR_debug)/.conan.stamp
-	@echo "Configuring CMake (debug)..."
-	$(CMAKE) --preset $(CMAKE_PRESET_debug) $(CMAKE_CONFIGURE_ARGS_debug)
-	touch $@
+.PHONY: ci
+ci: conan-release ## Run the public CI workflow preset
+	echo "Running workflow (ci)..."
+	$(CMAKE) --workflow --preset ci
 
-$(BUILD_DIR_release)/.cmake.stamp: $(BUILD_DIR_release)/.conan.stamp
-	@echo "Configuring CMake (release)..."
-	$(CMAKE) --preset $(CMAKE_PRESET_release) $(CMAKE_CONFIGURE_ARGS_release)
-	touch $@
+.PHONY: test-debug test-release test-asan
+test-debug test-release test-asan: test-%: %
+	echo "Running tests ($*)..."
+	$(CTEST) --preset $*
 
-.PHONY: build-%
-build-%: build/%/.cmake.stamp ## Build a preset, e.g. make build-debug
-	@echo "Building ($*)..."
-	$(CMAKE) --build --preset $(CMAKE_PRESET_$*)
+.PHONY: coverage
+coverage: conan-debug ## Generate an LCOV report under build/debug/coverage-report
+	echo "Configuring CMake (coverage)..."
+	$(CMAKE) --preset coverage --fresh
+	echo "Building (coverage)..."
+	$(CMAKE) --build --preset coverage
+	echo "Generating coverage report..."
+	$(call require-tool,$(LCOV))
+	$(call require-tool,$(GENHTML))
+	find build/debug -name '*.gcda' -delete
+	echo "Running tests (coverage)..."
+	$(CTEST) --preset coverage
+	$(LCOV) --capture \
+		--directory build/debug \
+		--base-directory $(abspath .) \
+		--no-external \
+		$(LCOV_CAPTURE_ARGS) \
+		--output-file build/debug/coverage.info
+	rm -rf build/debug/coverage-report
+	$(GENHTML) build/debug/coverage.info --output-directory build/debug/coverage-report
 
-.PHONY: test-%
-test-%: build-% ## Run tests for a preset, e.g. make test-debug
-	@echo "Running tests ($*)..."
-	$(CTEST) --preset $(CMAKE_PRESET_$*)
+.PHONY: lint
+lint: conan-debug ## Run clang-tidy against the debug compilation database
+	echo "Configuring CMake (debug)..."
+	$(CMAKE) --preset debug
+	echo "Running clang-tidy..."
+	$(call require-tool,$(CLANG_TIDY))
+	$(CLANG_TIDY) -p build/debug $(TIDY_SOURCES)
 
 .PHONY: format
 format: ## Format C++ sources in place with clang-format
-	@echo "Formatting C++ sources..."
+	echo "Formatting C++ sources..."
 	$(call require-tool,$(CLANG_FORMAT))
 	$(CLANG_FORMAT) -i $(FORMAT_FILES)
 
 .PHONY: format-check
 format-check: ## Fail if C++ sources are not clang-format clean
-	@echo "Checking C++ formatting..."
+	echo "Checking C++ formatting..."
 	$(call require-tool,$(CLANG_FORMAT))
 	$(CLANG_FORMAT) --dry-run --Werror $(FORMAT_FILES)
 
-.PHONY: coverage
-coverage: build-debug ## Generate an LCOV report under build/debug/coverage-report
-	@echo "Generating coverage report..."
-	$(call require-tool,$(LCOV))
-	$(call require-tool,$(GENHTML))
-	find $(BUILD_DIR_debug) -name '*.gcda' -delete
-	$(CTEST) --preset $(CMAKE_PRESET_debug)
-	$(LCOV) --capture \
-		--directory $(BUILD_DIR_debug) \
-		--base-directory $(abspath .) \
-		--no-external \
-		$(LCOV_CAPTURE_ARGS) \
-		--output-file $(BUILD_DIR_debug)/coverage.info
-	rm -rf $(BUILD_DIR_debug)/coverage-report
-	$(GENHTML) $(BUILD_DIR_debug)/coverage.info --output-directory $(BUILD_DIR_debug)/coverage-report
-
-.PHONY: lint
-lint: configure-debug ## Run clang-tidy against the debug compilation database
-	@echo "Running clang-tidy..."
-	$(call require-tool,$(CLANG_TIDY))
-	$(CLANG_TIDY) -p $(BUILD_DIR_debug) $(TIDY_SOURCES)
-
-.PHONY: clean
-clean: ## Remove all build artifacts
-	@echo "Removing build artifacts..."
-	rm -rf build/
-
 .PHONY: lock
 lock: ## Regenerate conan.lock from conanfile.py
-	@echo "Regenerating conan.lock..."
-	$(CONAN) lock create . -s build_type=Debug
-	$(CONAN) lock create . -s build_type=Release --lockfile=conan.lock --lockfile-out=conan.lock
+	echo "Regenerating conan.lock..."
+	$(CONAN) lock create . -s compiler.cppstd=23 -s build_type=Debug
+	$(CONAN) lock create . -s compiler.cppstd=23 -s build_type=Release --lockfile=conan.lock --lockfile-out=conan.lock
 
-.PHONY: debug
-debug: ## Install, configure, build, and test the debug preset
-
-.PHONY: release
-release: ## Install, configure, build, and test the release preset
-
-$(PRESETS): %: test-% ## Install, configure, build, and test a preset
+.PHONY: clean
+clean: ## Remove generated build artifacts and Conan preset files
+	echo "Removing generated artifacts..."
+	rm -rf build/ ConanPresets.json compile_commands.json CMakeUserPresets.json

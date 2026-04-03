@@ -10,101 +10,147 @@
 
 A modern C++23 project boilerplate using:
 
-- [CMake](https://cmake.org) with checked-in `debug` and `release` presets
+- [CMake](https://cmake.org) presets and workflow presets as the public build interface
 - [Conan 2](https://conan.io) for dependency management
 - [Boost](https://www.boost.org) via Conan for portable utility libraries
 - [GoogleTest](https://github.com/google/googletest) via Conan
+
+The project keeps the public presets in the repository and lets Conan generate the toolchain and
+its internal presets:
+
+- the project owns [`CMakePresets.json`](CMakePresets.json)
+- Conan generates `ConanPresets.json`
+- the public presets (`debug`, `release`, `asan`, `coverage`, `ci`) inherit from Conan's internal
+  presets
+
+The checked-in presets are the source of truth. The [`Makefile`](Makefile) is only a thin
+convenience wrapper around `conan install` plus the public CMake presets and workflows.
 
 ## Prerequisites
 
 - CMake 3.28+
 - Conan 2
-- Ninja
+- Ninja or GNU Make on Unix-like systems
+- Visual Studio 2022 on Windows
 - A compiler and standard library with working C++23 support
   - GCC 13+
   - LLVM Clang 17+
   - Apple Clang 17+ recommended
+  - MSVC 19.3x or newer on Windows
 
 > [!IMPORTANT]
 > If you are on a very new Apple Clang release, make sure your Conan installation and settings are
 > up to date before running `conan profile detect`.
 
-> [!NOTE]
-> The checked-in `debug` and `release` presets expect Conan toolchain files under `build/debug`
-> and `build/release`. The Makefile bootstrap targets create those files for you.
+Conan chooses the CMake generator for you:
+
+- `Ninja` on Unix-like systems when it is available
+- `Unix Makefiles` on Unix-like systems when `ninja` is not installed
+- `Visual Studio 17 2022` on Windows
 
 ## Configure, build, and test
 
-### Quick start
+### Development workflow
 
 ```console
 git clone https://github.com/megabyde/cpp-boilerplate.git
 cd cpp-boilerplate
+conan profile detect --force
+conan install . -s compiler.cppstd=23 -s build_type=Debug --lockfile=conan.lock --build=missing
+cmake --workflow --preset debug
+```
+
+### CI workflow
+
+```console
+conan install . -s compiler.cppstd=23 -s build_type=Release --lockfile=conan.lock --build=missing
+cmake --workflow --preset ci
+```
+
+### Makefile convenience
+
+```console
 make debug
-```
-
-The repo-managed workflow assumes the `Ninja` generator.
-
-### Release build
-
-```console
+make bootstrap
 make release
+make asan
+make ci
 ```
 
-`make debug`, `make release`, and `make coverage` are the normal entry points. The lower-level
-`conan-%` and `configure-%` targets are only useful when you explicitly want to stop after
-dependency resolution or CMake configure, for example before using an IDE.
+These targets do not define the build. They just run the matching Conan install command and then
+delegate to the public presets and workflows.
 
-To bootstrap the checked-in presets without building yet:
+### Direct preset usage
 
 ```console
-make configure-debug
+conan install . -s compiler.cppstd=23 -s build_type=Debug --lockfile=conan.lock --build=missing
+cmake --preset debug
 cmake --build --preset debug
 ctest --preset debug
 ```
 
-### Helper targets
-
-To see all helper targets:
-
 ```console
-make help
+conan install . -s compiler.cppstd=23 -s build_type=Release --lockfile=conan.lock --build=missing
+cmake --preset release
+cmake --build --preset release
+ctest --preset release
 ```
 
-Useful maintenance targets:
+### AddressSanitizer
 
 ```console
-make clean
-make lock
+conan install . -s compiler.cppstd=23 -s build_type=Debug -o '&:asan=True' --lockfile=conan.lock --build=missing
+cmake --preset asan
+cmake --build --preset asan
+ctest --preset asan
 ```
 
 > [!NOTE]
-> Configuring with `cmake --preset ...` or the Makefile configure/build targets refreshes the root
-> `compile_commands.json` symlink to point at the active build directory.
+> Conan owns the dependency graph, generator, toolchain, and ABI settings. If you switch the Conan
+> configuration, rerun `conan install` for that configuration and keep using the same public CMake
+> preset names.
 
-The sample app also demonstrates a small Boost-powered helper that trims and joins
-record fields before printing a summary line.
+## Public presets
+
+- Configure presets: `debug`, `release`, `asan`, `coverage`, `ci`
+- Build presets: `debug`, `release`, `asan`, `coverage`, `ci`
+- Test presets: `debug`, `release`, `asan`, `coverage`, `ci`
+- Workflow presets: `debug`, `ci`
+
+The Conan-generated `conan-*` presets are internal implementation details and are not the public
+interface for developers or CI.
 
 ## Dependency lock file
 
 `conan.lock` pins the exact dependency graph for reproducible builds. To update dependencies:
 
 1. Edit version pins in `conanfile.py`.
-2. Run `make lock` to regenerate the lock file.
-3. Run `make debug` to verify.
+2. Regenerate the lock file with `conan lock create`.
+3. Run the appropriate `conan install` and `cmake --workflow` commands to verify.
 4. Commit both `conanfile.py` and `conan.lock`.
 
 ## Formatting and linting
 
 ```console
-make format
-make format-check
-make lint
+clang-format -i $(find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
+clang-format --dry-run --Werror $(find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
+clang-tidy -p build/debug src/main.cpp tests/split_test.cpp
 ```
 
 ## Coverage
 
 Generate an LCOV tracefile and HTML report with:
+
+```console
+conan install . -s compiler.cppstd=23 -s build_type=Debug --lockfile=conan.lock --build=missing
+cmake --preset coverage --fresh
+cmake --build --preset coverage
+ctest --preset coverage
+lcov --capture --directory build/debug --base-directory . --no-external --output-file build/debug/coverage.info
+genhtml build/debug/coverage.info --output-directory build/debug/coverage-report
+```
+
+Or use the convenience wrapper:
 
 ```console
 make coverage
@@ -115,54 +161,46 @@ This writes:
 - `build/debug/coverage.info`
 - `build/debug/coverage-report/index.html`
 
-> [!NOTE]
-> Coverage reuses the `build/debug` directory configured by the Makefile's `debug` flow.
-> `make coverage` reruns the debug test suite and then captures coverage from that build.
-
-> [!NOTE]
-> `make coverage` requires `lcov` and `genhtml` to be installed. On Ubuntu, the package is
-> `lcov`. On macOS with Homebrew, use `brew install lcov`.
-
 ## Editor setup
 
 ### VS Code
 
-The repository includes a complete `.vscode/` configuration:
-
-- **settings.json**: enables CMake preset mode and points IntelliSense at the root
-  `compile_commands.json` symlink.
-- **launch.json**: a cross-platform debug configuration that launches whichever CMake target is
-  selected in the CMake Tools sidebar.
-- **tasks.json**: optional `Setup: Debug` and `Setup: Release` tasks that run the Makefile
-  bootstrap flow.
-- **extensions.json**: recommends the C/C++ and CMake Tools extensions.
-
-Before the first IDE configure, bootstrap the toolchain files once:
+VS Code with CMake Tools will discover the checked-in public presets automatically after Conan
+generates `ConanPresets.json`. Bootstrap the matching Conan configuration first:
 
 ```console
-make configure-debug
+conan install . -s compiler.cppstd=23 -s build_type=Debug --lockfile=conan.lock --build=missing
 ```
 
-Then open the folder in VS Code, accept the recommended extensions, and select the `debug` or
-`release` preset.
+Use:
+
+- `build_type=Debug` for `debug` and `coverage`
+- `build_type=Release` for `release` and `ci`
+- `build_type=Debug -o '&:asan=True'` for `asan`
+
+Or run `make bootstrap` to generate both the debug and release Conan presets up front.
+
+Then open the folder, accept the recommended extensions, and select the matching public preset.
 
 ### CLion
 
-Before the first configure in CLion, generate the Conan toolchain files once with:
+CLion can use the same public presets. Generate `ConanPresets.json` first:
 
 ```console
-make configure-debug
+conan install . -s compiler.cppstd=23 -s build_type=Debug --lockfile=conan.lock --build=missing
 ```
 
-Then in CLion:
+Use the same matching Conan configuration rules as VS Code, or run `make bootstrap` first. Then in
+CLion:
 
 1. Open the project root
-2. Select the `debug` or `release` preset as the active CMake profile
+2. Select the `debug`, `release`, `asan`, or `ci` preset as the active CMake profile
 3. Reload CMake
 
 > [!NOTE]
-> This repo does not rely on the Conan CLion plugin. The Makefile bootstrap plus checked-in CMake
-> presets are the source of truth.
+> No IDE-specific task files are required for the build. The presets are the source of truth.
+> If you switch between `debug`, `asan`, and `coverage`, rerun the configure step with `--fresh` so
+> CMake rebuilds the shared debug cache from the matching Conan-generated preset.
 
 ## Layout
 
@@ -170,4 +208,4 @@ Then in CLion:
 - `src/`: application sources
 - `tests/`: unit tests
 - `conanfile.py`: Conan dependency definition
-- `Makefile`: helper targets for local development and CI
+- `CMakePresets.json`: project-owned public presets and workflows
