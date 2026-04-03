@@ -1,0 +1,10 @@
+{
+    "version": "0.5",
+    "requires": [
+        "gtest/1.15.0#9eba70e54373fb7325151ad3375934a1%1743410805.366",
+        "boost/1.90.0#d5e8defe7355494953be18524a7f135b%1765955095.179"
+    ],
+    "build_requires": [],
+    "python_requires": [],
+    "config_requires": []
+}

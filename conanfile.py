@@ -1,4 +1,5 @@
 from conan import ConanFile
+from conan.tools.cmake import cmake_layout
 
 
 class CppBoilerplateConan(ConanFile):
@@ -16,3 +17,8 @@ class CppBoilerplateConan(ConanFile):
     default_options = {
         "boost/*:header_only": True,
     }
+
+    def layout(self):
+        cmake_layout(self)
+        self.folders.build = "."
+        self.folders.generators = "."
