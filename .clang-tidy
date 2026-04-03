@@ -1,7 +1,12 @@
 Checks: >
   clang-analyzer-*,
   bugprone-*,
-  performance-*
+  performance-*,
+  modernize-*,
+  readability-*,
+  misc-*,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length
 WarningsAsErrors: '*'
 HeaderFilterRegex: '^(include|src|tests)/'
 FormatStyle: file
