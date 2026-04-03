@@ -25,7 +25,7 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
     )
 endif()
 
-find_package(Boost REQUIRED)
+find_package(Boost 1.74 REQUIRED)
 
 function(enable_project_warnings target)
     if(MSVC)
