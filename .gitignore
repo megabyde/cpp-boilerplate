@@ -1,6 +1,7 @@
 build/
 cmake-build-*/
 .cache/
+.idea/
 .vscode/.cmaketools.json
 compile_commands.json
 CMakeUserPresets.json
