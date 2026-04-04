@@ -6,4 +6,5 @@ ConanPresets.json
 .vscode/.cmaketools.json
 compile_commands.json
 CMakeUserPresets.json
+__pycache__/
 *~
