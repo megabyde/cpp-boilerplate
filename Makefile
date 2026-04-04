@@ -18,11 +18,22 @@ endif
 CONAN_INSTALL_ARGS ?= -s compiler.cppstd=23 --build=missing --lockfile=conan.lock
 FORMAT_FILES := $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
 TIDY_SOURCES := $(shell find src tests -type f -name '*.cpp')
+CONAN_INPUTS := conanfile.py conan.lock
+CONAN_BUILD_DIR_debug := build/debug
+CONAN_BUILD_DIR_release := build/release
+CONAN_BUILD_DIR_asan := build/debug-asan
+CONAN_BUILD_DIR_coverage := build/debug-coverage
+CONAN_STAMP_debug := $(CONAN_BUILD_DIR_debug)/.conan.stamp
+CONAN_STAMP_release := $(CONAN_BUILD_DIR_release)/.conan.stamp
+CONAN_STAMP_asan := $(CONAN_BUILD_DIR_asan)/.conan.stamp
+CONAN_STAMP_coverage := $(CONAN_BUILD_DIR_coverage)/.conan.stamp
+CONAN_STAMPS := $(CONAN_STAMP_debug) $(CONAN_STAMP_release) $(CONAN_STAMP_asan) $(CONAN_STAMP_coverage)
 CONAN_BUILD_TYPE_debug := Debug
 CONAN_BUILD_TYPE_release := Release
 CONAN_BUILD_TYPE_asan := Debug
+CONAN_BUILD_TYPE_coverage := Debug
 CONAN_OPTIONS_asan := -o '&:asan=True'
-CMAKE_CONFIGURE_ARGS_asan := --fresh
+CONAN_OPTIONS_coverage := -o '&:coverage=True'
 RUN_TESTS_release := 1
 RUN_TESTS_asan := 1
 LCOV_IGNORE_ERRORS_Linux := mismatch
@@ -47,20 +58,33 @@ conan-profile: ## Detect the default Conan profile for this machine
 	echo "Detecting Conan profile..."
 	$(CONAN) profile detect --force
 
-.PHONY: conan-debug conan-release conan-asan
-conan-debug conan-release conan-asan: conan-%: ## Generate Conan presets and toolchain files for a public preset
-	echo "Installing Conan dependencies ($*)..."
-	$(CONAN) install . -s build_type=$(CONAN_BUILD_TYPE_$*) $(CONAN_OPTIONS_$*) $(CONAN_INSTALL_ARGS)
+conan-debug: $(CONAN_STAMP_debug) ## Generate Conan presets and toolchain files for the debug preset
+conan-release: $(CONAN_STAMP_release) ## Generate Conan presets and toolchain files for the release and ci presets
+conan-asan: $(CONAN_STAMP_asan) ## Generate Conan presets and toolchain files for the asan preset
+conan-coverage: $(CONAN_STAMP_coverage) ## Generate Conan presets and toolchain files for the coverage preset
+
+$(CONAN_STAMP_debug): CONAN_PRESET_NAME = debug
+$(CONAN_STAMP_release): CONAN_PRESET_NAME = release
+$(CONAN_STAMP_asan): CONAN_PRESET_NAME = asan
+$(CONAN_STAMP_coverage): CONAN_PRESET_NAME = coverage
+
+$(CONAN_STAMPS): %/.conan.stamp: $(CONAN_INPUTS)
+	echo "Installing Conan dependencies ($(CONAN_PRESET_NAME))..."
+	$(CONAN) install . -s build_type=$(CONAN_BUILD_TYPE_$(CONAN_PRESET_NAME)) $(CONAN_OPTIONS_$(CONAN_PRESET_NAME)) $(CONAN_INSTALL_ARGS)
+	touch $@
 
 .PHONY: bootstrap
 bootstrap: conan-debug conan-release ## Generate Conan presets for the public debug, release, and ci presets
 
+.PHONY: build-debug build-release build-asan build-coverage
+build-debug build-release build-asan build-coverage: build-%: conan-%
+	echo "Configuring CMake ($*)..."
+	$(CMAKE) --preset $* $(CMAKE_CONFIGURE_ARGS_$*)
+	echo "Building ($*)..."
+	$(CMAKE) --build --preset $*
+
 .PHONY: debug release asan
-debug release asan: %: conan-%
-	echo "Configuring CMake ($@)..."
-	$(CMAKE) --preset $@ $(CMAKE_CONFIGURE_ARGS_$@)
-	echo "Building ($@)..."
-	$(CMAKE) --build --preset $@
+debug release asan: %: build-%
 	$(if $(RUN_TESTS_$@),echo "Running tests ($@)..."; $(CTEST) --preset $@)
 
 .PHONY: ci
@@ -68,31 +92,27 @@ ci: conan-release ## Run the public CI workflow preset
 	echo "Running workflow (ci)..."
 	$(CMAKE) --workflow --preset ci
 
-.PHONY: test-debug test-release test-asan
-test-debug test-release test-asan: test-%: %
+.PHONY: test-debug test-release test-asan test-coverage
+test-debug test-release test-asan test-coverage: test-%: build-%
 	echo "Running tests ($*)..."
 	$(CTEST) --preset $*
 
 .PHONY: coverage
-coverage: conan-debug ## Generate an LCOV report under build/debug/coverage-report
-	echo "Configuring CMake (coverage)..."
-	$(CMAKE) --preset coverage --fresh
-	echo "Building (coverage)..."
-	$(CMAKE) --build --preset coverage
+coverage: build-coverage ## Generate an LCOV report under build/debug-coverage/coverage-report
 	echo "Generating coverage report..."
 	$(call require-tool,$(LCOV))
 	$(call require-tool,$(GENHTML))
-	find build/debug -name '*.gcda' -delete
+	find build/debug-coverage -name '*.gcda' -delete
 	echo "Running tests (coverage)..."
 	$(CTEST) --preset coverage
 	$(LCOV) --capture \
-		--directory build/debug \
+		--directory build/debug-coverage \
 		--base-directory $(abspath .) \
 		--no-external \
 		$(LCOV_CAPTURE_ARGS) \
-		--output-file build/debug/coverage.info
-	rm -rf build/debug/coverage-report
-	$(GENHTML) build/debug/coverage.info --output-directory build/debug/coverage-report
+		--output-file build/debug-coverage/coverage.info
+	rm -rf build/debug-coverage/coverage-report
+	$(GENHTML) build/debug-coverage/coverage.info --output-directory build/debug-coverage/coverage-report
 
 .PHONY: lint
 lint: conan-debug ## Run clang-tidy against the debug compilation database

@@ -15,8 +15,8 @@ A modern C++23 project boilerplate using:
 - [Boost](https://www.boost.org) via Conan for portable utility libraries
 - [GoogleTest](https://github.com/google/googletest) via Conan
 
-The project keeps the public presets in the repository and lets Conan generate the toolchain and
-its internal presets:
+The project keeps the public presets in the repository and lets Conan generate the toolchain and its
+internal presets:
 
 - the project owns [`CMakePresets.json`](CMakePresets.json)
 - Conan generates `ConanPresets.json`
@@ -50,64 +50,38 @@ Conan chooses the CMake generator for you:
 
 ## Configure, build, and test
 
-### Development workflow
+### Quick start
 
 ```console
 git clone https://github.com/megabyde/cpp-boilerplate.git
 cd cpp-boilerplate
-conan profile detect --force
-conan install . -s compiler.cppstd=23 -s build_type=Debug --lockfile=conan.lock --build=missing
-cmake --workflow --preset debug
-```
-
-### CI workflow
-
-```console
-conan install . -s compiler.cppstd=23 -s build_type=Release --lockfile=conan.lock --build=missing
-cmake --workflow --preset ci
-```
-
-### Makefile convenience
-
-```console
+make conan-profile
 make debug
-make bootstrap
+```
+
+Other local convenience targets:
+
+```console
 make release
 make asan
+make coverage
 make ci
 ```
 
 These targets do not define the build. They just run the matching Conan install command and then
-delegate to the public presets and workflows.
-
-### Direct preset usage
-
-```console
-conan install . -s compiler.cppstd=23 -s build_type=Debug --lockfile=conan.lock --build=missing
-cmake --preset debug
-cmake --build --preset debug
-ctest --preset debug
-```
-
-```console
-conan install . -s compiler.cppstd=23 -s build_type=Release --lockfile=conan.lock --build=missing
-cmake --preset release
-cmake --build --preset release
-ctest --preset release
-```
+delegate to the public CMake presets and workflows.
 
 ### AddressSanitizer
 
 ```console
-conan install . -s compiler.cppstd=23 -s build_type=Debug -o '&:asan=True' --lockfile=conan.lock --build=missing
-cmake --preset asan
-cmake --build --preset asan
-ctest --preset asan
+make asan
 ```
+
+This uses a dedicated ASAN build tree under `build/debug-asan`.
 
 > [!NOTE]
 > Conan owns the dependency graph, generator, toolchain, and ABI settings. If you switch the Conan
-> configuration, rerun `conan install` for that configuration and keep using the same public CMake
+> configuration, rerun the matching `make conan-*` target and keep using the same public CMake
 > preset names.
 
 ## Public presets
@@ -125,16 +99,16 @@ interface for developers or CI.
 `conan.lock` pins the exact dependency graph for reproducible builds. To update dependencies:
 
 1. Edit version pins in `conanfile.py`.
-2. Regenerate the lock file with `conan lock create`.
-3. Run the appropriate `conan install` and `cmake --workflow` commands to verify.
+2. Regenerate the lock file with `make lock`.
+3. Run the appropriate `make` target to verify.
 4. Commit both `conanfile.py` and `conan.lock`.
 
 ## Formatting and linting
 
 ```console
-clang-format -i $(find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
-clang-format --dry-run --Werror $(find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
-clang-tidy -p build/debug src/main.cpp tests/split_test.cpp
+make format
+make format-check
+make lint
 ```
 
 ## Coverage
@@ -142,24 +116,13 @@ clang-tidy -p build/debug src/main.cpp tests/split_test.cpp
 Generate an LCOV tracefile and HTML report with:
 
 ```console
-conan install . -s compiler.cppstd=23 -s build_type=Debug --lockfile=conan.lock --build=missing
-cmake --preset coverage --fresh
-cmake --build --preset coverage
-ctest --preset coverage
-lcov --capture --directory build/debug --base-directory . --no-external --output-file build/debug/coverage.info
-genhtml build/debug/coverage.info --output-directory build/debug/coverage-report
-```
-
-Or use the convenience wrapper:
-
-```console
 make coverage
 ```
 
 This writes:
 
-- `build/debug/coverage.info`
-- `build/debug/coverage-report/index.html`
+- `build/debug-coverage/coverage.info`
+- `build/debug-coverage/coverage-report/index.html`
 
 ## Editor setup
 
@@ -169,14 +132,15 @@ VS Code with CMake Tools will discover the checked-in public presets automatical
 generates `ConanPresets.json`. Bootstrap the matching Conan configuration first:
 
 ```console
-conan install . -s compiler.cppstd=23 -s build_type=Debug --lockfile=conan.lock --build=missing
+make conan-debug
 ```
 
 Use:
 
-- `build_type=Debug` for `debug` and `coverage`
-- `build_type=Release` for `release` and `ci`
-- `build_type=Debug -o '&:asan=True'` for `asan`
+- `make conan-debug` for `debug`
+- `make conan-release` for `release` and `ci`
+- `make conan-asan` for `asan`
+- `make conan-coverage` for `coverage`
 
 Or run `make bootstrap` to generate both the debug and release Conan presets up front.
 
@@ -187,7 +151,7 @@ Then open the folder, accept the recommended extensions, and select the matching
 CLion can use the same public presets. Generate `ConanPresets.json` first:
 
 ```console
-conan install . -s compiler.cppstd=23 -s build_type=Debug --lockfile=conan.lock --build=missing
+make conan-debug
 ```
 
 Use the same matching Conan configuration rules as VS Code, or run `make bootstrap` first. Then in
@@ -199,8 +163,8 @@ CLion:
 
 > [!NOTE]
 > No IDE-specific task files are required for the build. The presets are the source of truth.
-> If you switch between `debug`, `asan`, and `coverage`, rerun the configure step with `--fresh` so
-> CMake rebuilds the shared debug cache from the matching Conan-generated preset.
+> `debug`, `asan`, and `coverage` each use their own build tree, so switching between them does not
+> require forcing a fresh reconfigure.
 
 ## Layout
 

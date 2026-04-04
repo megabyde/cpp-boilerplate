@@ -13,6 +13,7 @@ class CppBoilerplateConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     options = {
         "asan": [True, False],
+        "coverage": [True, False],
         "with_tests": [True, False],
     }
 
@@ -20,6 +21,7 @@ class CppBoilerplateConan(ConanFile):
 
     default_options = {
         "asan": False,
+        "coverage": False,
         "with_tests": True,
         "boost/*:header_only": True,
     }
@@ -31,7 +33,13 @@ class CppBoilerplateConan(ConanFile):
         return "Ninja" if shutil.which("ninja") else "Unix Makefiles"
 
     def layout(self):
-        self.folders.build_folder_vars = ["settings.build_type"]
+        build_variants = []
+        if self.options.get_safe("asan"):
+            build_variants.append("asan")
+        if self.options.get_safe("coverage"):
+            build_variants.append("coverage")
+        self.build_variant = "-".join(build_variants) if build_variants else None
+        self.folders.build_folder_vars = ["settings.build_type", "self.build_variant"]
         cmake_layout(self, generator=self._cmake_generator())
 
     def build_requirements(self):
@@ -46,4 +54,5 @@ class CppBoilerplateConan(ConanFile):
         tc.user_presets_path = "ConanPresets.json"
         tc.cache_variables["BUILD_TESTING"] = bool(self.options.with_tests)
         tc.cache_variables["ENABLE_ASAN"] = bool(self.options.asan)
+        tc.cache_variables["ENABLE_COVERAGE"] = bool(self.options.coverage)
         tc.generate()
