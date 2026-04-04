@@ -1,7 +1,28 @@
-Checks: >
-  clang-analyzer-*,
-  bugprone-*,
-  performance-*
+FormatStyle: file
 WarningsAsErrors: '*'
 HeaderFilterRegex: '^(include|src|tests)/'
-FormatStyle: file
+
+Checks: >
+  clang-analyzer-*,
+  boost-*,
+  bugprone-*,
+  google-build-explicit-make-pair,
+  google-explicit-constructor,
+  google-runtime-memset,
+  google-runtime-member-string-references,
+  google-readability-redundant-smartptr-get,
+  misc-*,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  performance-*,
+  readability-*,
+  -readability-identifier-length
+CheckOptions:
+  - key: modernize-loop-convert.NamingStyle
+    value: lower_case
+  - key: readability-simplify-boolean-expr.ChainedConditionalReturn
+    value: '1'
+  - key: readability-simplify-boolean-expr.ChainedConditionalAssignment
+    value: '1'
+
+# vim: sw=2:ft=yaml

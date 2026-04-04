@@ -10,13 +10,15 @@ split(std::string_view record, char delimiter = ',')
     std::vector<std::string> fields;
 
     std::size_t begin = 0;
-    std::size_t end   = 0;
 
-    do {
-        end = record.find(delimiter, begin);
+    for (;;) {
+        std::size_t end = record.find(delimiter, begin);
         fields.emplace_back(record.substr(begin, end - begin));
+        if (end == std::string_view::npos) {
+            break;
+        }
         begin = end + 1;
-    } while (end != std::string_view::npos);
+    }
 
     return fields;
 }

@@ -1,15 +1,15 @@
-# Requires clang version >= 3.8
+# Requires clang-format >= 16
 BasedOnStyle: LLVM
 Standard: Latest
 #
 AccessModifierOffset: -4
 AlignConsecutiveAssignments: true
-AlignEscapedNewlinesLeft: true
+AlignEscapedNewlines: Left
 AlignOperands: true
 AlignTrailingComments: true
 AlignConsecutiveDeclarations: true
 AllowShortFunctionsOnASingleLine: Inline
-AlwaysBreakAfterDefinitionReturnType: TopLevel
+BreakAfterReturnType: TopLevelDefinitions
 AlwaysBreakTemplateDeclarations: false
 BreakBeforeBraces: Stroustrup
 ColumnLimit: 100

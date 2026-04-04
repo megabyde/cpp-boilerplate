@@ -2,26 +2,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "cpp-boilerplate (Windows)",
-            "type": "cppvsdbg",
+            "name": "Debug: CMake Target",
+            "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/build/Debug/cpp-boilerplate.exe",
-            "args": [],
-            "stopAtEntry": true,
-            "cwd": "${workspaceRoot}",
-            "environment": [],
-            "externalConsole": false
-        },
-        {
-            "name": "main-test (Windows)",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceRoot}/build/t/Debug/main_test.exe",
+            "program": "${command:cmake.launchTargetPath}",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceRoot}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": false
+            "linux": {
+                "MIMode": "gdb"
+            },
+            "osx": {
+                "MIMode": "lldb"
+            }
         }
     ]
 }

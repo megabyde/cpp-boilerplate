@@ -7,71 +7,34 @@ on:
     branches: main
 
 jobs:
-  quality:
-    name: Quality
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Check formatting
-      run: make format-check
-
-    - name: Set up Conan
-      uses: conan-io/setup-conan@v1
-
-    - name: Run clang-tidy
-      run: make lint
-
-  debug:
-    name: Debug (${{ matrix.os }})
-    needs: quality
+  ci:
+    name: CI (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Set up Conan
-      uses: conan-io/setup-conan@v1
-
-    - name: Install lcov
-      if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get update && sudo apt-get install --yes lcov
-
-    - name: Install lcov
-      if: matrix.os == 'macos-latest'
-      run: brew install lcov
-
-    - name: Run debug pipeline
-      run: make coverage
-
-    - name: Upload coverage report
-      uses: actions/upload-artifact@v4
+    - name: Cache Conan packages
+      uses: actions/cache@v4
       with:
-        name: coverage-report-${{ matrix.os }}
-        path: build/debug/coverage-report
-
-  release:
-    name: Release (${{ matrix.os }})
-    needs: quality
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+        path: ~/.conan2
+        key: conan-${{ matrix.os }}-${{ hashFiles('conanfile.py', 'conan.lock') }}
+        restore-keys: |
+          conan-${{ matrix.os }}-
 
     - name: Set up Conan
       uses: conan-io/setup-conan@v1
 
-    - name: Run release pipeline
-      run: make release
+    - name: Detect Conan profile
+      run: conan profile detect --force
+
+    - name: Install Conan dependencies
+      run: conan install . -s compiler.cppstd=23 -s build_type=Release --lockfile=conan.lock --build=missing
+
+    - name: Run CMake workflow
+      run: cmake --workflow --preset ci
