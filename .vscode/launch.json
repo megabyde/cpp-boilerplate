@@ -2,20 +2,38 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug: CMake Target",
+            "name": "Debug: CMake Target (macOS)",
+            "type": "lldb",
+            "request": "launch",
+            "preLaunchTask": "Prepare debug target",
+            "program": "${workspaceFolder}/build/debug/${command:cmake.launchTargetName}",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "env": {}
+        },
+        {
+            "name": "Debug: CMake Target (Linux)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${command:cmake.launchTargetPath}",
+            "preLaunchTask": "Prepare debug target",
+            "program": "${workspaceFolder}/build/debug/${command:cmake.launchTargetName}",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "linux": {
-                "MIMode": "gdb"
-            },
-            "osx": {
-                "MIMode": "lldb"
-            }
+            "MIMode": "gdb"
+        },
+        {
+            "name": "Debug: CMake Target (Windows)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "preLaunchTask": "Prepare debug target",
+            "program": "${workspaceFolder}/build/debug/Debug/${command:cmake.launchTargetName}.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": []
         }
     ]
 }
