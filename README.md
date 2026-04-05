@@ -145,6 +145,11 @@ Use:
 Or run `make bootstrap` to generate both the debug and release Conan presets up front.
 
 Then open the folder, accept the recommended extensions, and select the matching public preset.
+For the checked-in launch configuration, choose the target you want in the CMake Tools sidebar and
+start the platform-specific `Debug: CMake Target (...)` configuration. F5 will run the public
+`debug` workflow first and then launch the selected executable from `build/debug`. On macOS, the
+repository uses the CodeLLDB extension because the system `lldb` does not support the MI protocol
+used by `cppdbg`.
 
 ### CLion
 
