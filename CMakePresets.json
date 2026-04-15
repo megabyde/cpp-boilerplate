@@ -25,29 +25,23 @@
       "name": "asan",
       "displayName": "AddressSanitizer",
       "description": "Debug configuration with address sanitizer enabled.",
-      "inherits": "conan-debug-asan",
-      "condition": {
-        "type": "notEquals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
+      "inherits": "conan-debug",
+      "binaryDir": "${sourceDir}/build/DebugAsan",
+      "toolchainFile": "${sourceDir}/build/Debug/generators/conan_toolchain.cmake",
+      "cacheVariables": {
+        "ENABLE_ASAN": "ON"
       }
     },
     {
       "name": "coverage",
       "displayName": "Coverage",
       "description": "Debug configuration with coverage instrumentation enabled.",
-      "inherits": "conan-debug-coverage",
-      "condition": {
-        "type": "notEquals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
+      "inherits": "conan-debug",
+      "binaryDir": "${sourceDir}/build/DebugCoverage",
+      "toolchainFile": "${sourceDir}/build/Debug/generators/conan_toolchain.cmake",
+      "cacheVariables": {
+        "ENABLE_COVERAGE": "ON"
       }
-    },
-    {
-      "name": "ci",
-      "displayName": "ContinuousIntegration",
-      "description": "Release configuration used by CI workflows.",
-      "inherits": "release"
     }
   ],
   "buildPresets": [
@@ -70,11 +64,6 @@
       "name": "coverage",
       "configurePreset": "coverage",
       "configuration": "Debug"
-    },
-    {
-      "name": "ci",
-      "configurePreset": "ci",
-      "configuration": "Release"
     }
   ],
   "testPresets": [
@@ -109,14 +98,6 @@
       "output": {
         "outputOnFailure": true
       }
-    },
-    {
-      "name": "ci",
-      "configurePreset": "ci",
-      "configuration": "Release",
-      "output": {
-        "outputOnFailure": true
-      }
     }
   ],
   "workflowPresets": [
@@ -134,19 +115,53 @@
       ]
     },
     {
-      "name": "ci",
+      "name": "release",
       "steps": [
         {
           "type": "configure",
-          "name": "ci"
+          "name": "release"
         },
         {
           "type": "build",
-          "name": "ci"
+          "name": "release"
         },
         {
           "type": "test",
-          "name": "ci"
+          "name": "release"
+        }
+      ]
+    },
+    {
+      "name": "asan",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "asan"
+        },
+        {
+          "type": "build",
+          "name": "asan"
+        },
+        {
+          "type": "test",
+          "name": "asan"
+        }
+      ]
+    },
+    {
+      "name": "coverage",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "coverage"
+        },
+        {
+          "type": "build",
+          "name": "coverage"
+        },
+        {
+          "type": "test",
+          "name": "coverage"
         }
       ]
     }

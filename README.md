@@ -20,23 +20,23 @@ internal presets:
 
 - the project owns [`CMakePresets.json`](CMakePresets.json)
 - Conan generates `ConanPresets.json`
-- the public presets (`debug`, `release`, `asan`, `coverage`, `ci`) inherit from Conan's internal
+- the public presets (`debug`, `release`, `asan`, `coverage`) inherit from Conan's internal
   presets
 
 The checked-in presets are the source of truth. The [`Makefile`](Makefile) is only a thin
 convenience wrapper around `conan install` plus the public CMake presets and workflows.
+
+This repository uses Conan's `CMakeConfigDeps` generator directly.
 
 ## Prerequisites
 
 - CMake 3.28+
 - Conan 2
 - Ninja or GNU Make on Unix-like systems
-- Visual Studio 2022 on Windows
 - A compiler and standard library with working C++23 support
   - GCC 13+
   - LLVM Clang 17+
   - Apple Clang 17+ recommended
-  - MSVC 19.3x or newer on Windows
 
 > [!IMPORTANT]
 > If you are on a very new Apple Clang release, make sure your Conan installation and settings are
@@ -46,7 +46,8 @@ Conan chooses the CMake generator for you:
 
 - `Ninja` on Unix-like systems when it is available
 - `Unix Makefiles` on Unix-like systems when `ninja` is not installed
-- `Visual Studio 17 2022` on Windows
+
+This boilerplate currently supports macOS and Linux.
 
 ## Configure, build, and test
 
@@ -65,7 +66,6 @@ Other local convenience targets:
 make release
 make asan
 make coverage
-make ci
 ```
 
 These targets do not define the build. They just run the matching Conan install command and then
@@ -77,19 +77,25 @@ delegate to the public CMake presets and workflows.
 make asan
 ```
 
-This uses a dedicated ASAN build tree under `build/debug-asan`.
+This uses a dedicated ASAN build tree under `build/DebugAsan`.
 
 > [!NOTE]
 > Conan owns the dependency graph, generator, toolchain, and ABI settings. If you switch the Conan
-> configuration, rerun the matching `make conan-*` target and keep using the same public CMake
-> preset names.
+> configuration, rerun `make bootstrap` or the matching public `make` target and keep using the
+> same public CMake preset names.
+
+### Tests
+
+Tests are controlled by CMake's built-in `BUILD_TESTING` option from `include(CTest)`. This
+project leaves it at the default `ON`, so the `release`, `asan`, and `coverage` workflows run the
+test suite by default.
 
 ## Public presets
 
-- Configure presets: `debug`, `release`, `asan`, `coverage`, `ci`
-- Build presets: `debug`, `release`, `asan`, `coverage`, `ci`
-- Test presets: `debug`, `release`, `asan`, `coverage`, `ci`
-- Workflow presets: `debug`, `ci`
+- Configure presets: `debug`, `release`, `asan`, `coverage`
+- Build presets: `debug`, `release`, `asan`, `coverage`
+- Test presets: `debug`, `release`, `asan`, `coverage`
+- Workflow presets: `debug`, `release`, `asan`, `coverage`
 
 The Conan-generated `conan-*` presets are internal implementation details and are not the public
 interface for developers or CI.
@@ -121,49 +127,30 @@ make coverage
 
 This writes:
 
-- `build/debug-coverage/coverage.info`
-- `build/debug-coverage/coverage-report/index.html`
+- `build/DebugCoverage/coverage.info`
+- `build/DebugCoverage/coverage-report/index.html`
 
 ## Editor setup
 
 ### VS Code
 
 VS Code with CMake Tools will discover the checked-in public presets automatically after Conan
-generates `ConanPresets.json`. Bootstrap the matching Conan configuration first:
-
-```console
-make conan-debug
-```
-
-Use:
-
-- `make conan-debug` for `debug`
-- `make conan-release` for `release` and `ci`
-- `make conan-asan` for `asan`
-- `make conan-coverage` for `coverage`
-
-Or run `make bootstrap` to generate both the debug and release Conan presets up front.
+generates `ConanPresets.json`. Run `make bootstrap` first to generate both debug and release Conan
+toolchains and presets.
 
 Then open the folder, accept the recommended extensions, and select the matching public preset.
 For the checked-in launch configuration, choose the target you want in the CMake Tools sidebar and
 start the platform-specific `Debug: CMake Target (...)` configuration. F5 will run the public
-`debug` workflow first and then launch the selected executable from `build/debug`. On macOS, the
+`debug` workflow first and then launch the selected executable from `build/Debug`. On macOS, the
 repository uses the CodeLLDB extension because the system `lldb` does not support the MI protocol
 used by `cppdbg`.
 
 ### CLion
 
-CLion can use the same public presets. Generate `ConanPresets.json` first:
-
-```console
-make conan-debug
-```
-
-Use the same matching Conan configuration rules as VS Code, or run `make bootstrap` first. Then in
-CLion:
+CLion can use the same public presets. Run `make bootstrap` first, then in CLion:
 
 1. Open the project root
-2. Select the `debug`, `release`, `asan`, or `ci` preset as the active CMake profile
+2. Select the `debug`, `release`, `asan`, or `coverage` preset as the active CMake profile
 3. Reload CMake
 
 > [!NOTE]

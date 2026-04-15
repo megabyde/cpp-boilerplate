@@ -23,17 +23,6 @@
             "cwd": "${workspaceFolder}",
             "environment": [],
             "MIMode": "gdb"
-        },
-        {
-            "name": "Debug: CMake Target (Windows)",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "preLaunchTask": "Prepare debug target",
-            "program": "${workspaceFolder}/build/debug/Debug/${command:cmake.launchTargetName}.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": []
         }
     ]
 }

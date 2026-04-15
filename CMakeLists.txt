@@ -15,7 +15,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(ENABLE_ASAN "Enable address sanitizer instrumentation" OFF)
 option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
 
-if(CMAKE_EXPORT_COMPILE_COMMANDS)
+if(
+    CMAKE_EXPORT_COMPILE_COMMANDS
+    AND CMAKE_GENERATOR MATCHES "Ninja|Makefiles"
+    AND NOT CMAKE_BINARY_DIR STREQUAL PROJECT_SOURCE_DIR
+)
     file(REMOVE ${PROJECT_SOURCE_DIR}/compile_commands.json)
     file(
         CREATE_LINK
@@ -29,11 +33,7 @@ endif()
 find_package(Boost 1.74 CONFIG REQUIRED)
 
 function(enable_project_warnings target)
-    if(MSVC)
-        target_compile_options(${target} PRIVATE /W4 /WX /permissive- /EHsc)
-    else()
-        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror)
-    endif()
+    target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endfunction()
 
 function(enable_sanitizers target)
