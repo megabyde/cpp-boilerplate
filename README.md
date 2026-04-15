@@ -15,6 +15,11 @@ A modern C++23 project boilerplate using:
 - [Boost](https://www.boost.org) via Conan for portable utility libraries
 - [GoogleTest](https://github.com/google/googletest) via Conan
 
+The sample code intentionally stays small, but it demonstrates a few C++23-friendly defaults:
+
+- `std::string_view` for lightweight input handling
+- `std::views::transform` in the sample utility pipeline without adding extra template machinery
+
 The project keeps the public presets in the repository and lets Conan generate the toolchain and its
 internal presets:
 

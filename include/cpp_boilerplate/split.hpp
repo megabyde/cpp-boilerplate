@@ -4,10 +4,10 @@
 #include <string_view>
 #include <vector>
 
-inline std::vector<std::string>
-split(std::string_view record, char delimiter = ',')
+inline std::vector<std::string_view>
+split_views(std::string_view record, char delimiter = ',')
 {
-    std::vector<std::string> fields;
+    std::vector<std::string_view> fields;
 
     std::size_t begin = 0;
 
@@ -18,6 +18,17 @@ split(std::string_view record, char delimiter = ',')
             break;
         }
         begin = end + 1;
+    }
+
+    return fields;
+}
+inline std::vector<std::string>
+split(std::string_view record, char delimiter = ',')
+{
+    std::vector<std::string> fields;
+
+    for (std::string_view field : split_views(record, delimiter)) {
+        fields.emplace_back(field);
     }
 
     return fields;
