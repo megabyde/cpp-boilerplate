@@ -3,6 +3,7 @@
 #include <cpp_boilerplate/record_summary.hpp>
 #include <cpp_boilerplate/split.hpp>
 
+#include <string_view>
 #include <vector>
 
 TEST(SplitTest, SplitsCommaSeparatedFields)
@@ -39,6 +40,12 @@ TEST(SplitTest, SupportsCustomDelimiter)
 {
     const std::vector<std::string> expected{"left", "middle", "right"};
     EXPECT_EQ(split("left|middle|right", '|'), expected);
+}
+
+TEST(SplitViewTest, ReturnsZeroCopyViews)
+{
+    const std::vector<std::string_view> expected{"52930489", "aaa", "18", "1222"};
+    EXPECT_EQ(split_views("52930489,aaa,18,1222"), expected);
 }
 
 TEST(RecordSummaryTest, TrimsWhitespaceBeforeJoiningFields)
