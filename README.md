@@ -8,7 +8,11 @@
 
 ## Overview
 
-A modern C++23 project boilerplate using:
+A modern C++23 project template demonstrating end-to-end toolchain integration: Conan 2 dependency
+management, CMake presets, multi-configuration builds, testing, sanitizers, coverage, CI, and IDE
+seteup.
+
+This repository uses:
 
 - [CMake](https://cmake.org) presets and workflow presets as the public build interface
 - [Conan 2](https://conan.io) for dependency management
