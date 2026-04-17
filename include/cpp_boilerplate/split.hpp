@@ -4,6 +4,8 @@
 #include <string_view>
 #include <vector>
 
+namespace cpp_boilerplate {
+
 inline std::vector<std::string_view>
 split_views(std::string_view record, char delimiter = ',')
 {
@@ -22,6 +24,7 @@ split_views(std::string_view record, char delimiter = ',')
 
     return fields;
 }
+
 inline std::vector<std::string>
 split(std::string_view record, char delimiter = ',')
 {
@@ -33,3 +36,5 @@ split(std::string_view record, char delimiter = ',')
 
     return fields;
 }
+
+} // namespace cpp_boilerplate

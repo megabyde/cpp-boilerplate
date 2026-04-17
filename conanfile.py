@@ -12,10 +12,12 @@ class CppBoilerplateConan(ConanFile):
 
     settings = "os", "compiler", "build_type", "arch"
 
-    requires = "boost/1.90.0"
+    requires = "spdlog/1.15.3"
 
     default_options = {
-        "boost/*:header_only": True,
+        "spdlog/*:header_only": False,
+        "spdlog/*:shared": False,
+        "spdlog/*:use_std_fmt": False,
     }
 
     def _cmake_generator(self):

@@ -30,7 +30,7 @@ if(
     )
 endif()
 
-find_package(Boost 1.74 CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 
 function(enable_project_warnings target)
     target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror)
@@ -68,7 +68,7 @@ target_include_directories(cpp-boilerplate PRIVATE ${PROJECT_SOURCE_DIR}/include
 target_link_libraries(
     cpp-boilerplate
     PRIVATE
-        Boost::headers
+        spdlog::spdlog
 )
 enable_project_warnings(cpp-boilerplate)
 enable_sanitizers(cpp-boilerplate)
@@ -84,7 +84,7 @@ if(BUILD_TESTING)
     target_link_libraries(
         split_test
         PRIVATE
-            Boost::headers
+            spdlog::spdlog
             GTest::gtest_main
     )
     enable_project_warnings(split_test)
