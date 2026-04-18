@@ -17,14 +17,15 @@ jobs:
     env:
       CC: ${{ matrix.compiler == 'gcc' && 'gcc' || 'clang' }}
       CXX: ${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
+      CMAKE_ARGS: -DWARNINGS_AS_ERRORS=ON
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15]
+        os: [ubuntu-latest, macos-latest]
         preset: [release, sanitize, coverage]
         compiler: [gcc, clang]
         exclude:
-          - os: macos-15
+          - os: macos-latest
             compiler: gcc
 
     steps:
@@ -35,24 +36,12 @@ jobs:
           key: conan-${{ matrix.os }}-${{ matrix.compiler }}-${{ hashFiles('conanfile.py', 'conan.lock') }}
           restore-keys: conan-${{ matrix.os }}-${{ matrix.compiler }}-
       - uses: conan-io/setup-conan@v1
-      - name: Pick host profile
-        id: profile
-        shell: bash
-        run: |
-          case "${{ runner.os }}-${{ matrix.compiler }}" in
-            Linux-gcc)   echo "path=profiles/linux" >> "$GITHUB_OUTPUT" ;;
-            Linux-clang) echo "path=profiles/linux-clang" >> "$GITHUB_OUTPUT" ;;
-            macOS-clang) echo "path=profiles/macos" >> "$GITHUB_OUTPUT" ;;
-            *)           echo "unsupported runner/compiler: ${{ runner.os }}-${{ matrix.compiler }}" >&2; exit 1 ;;
-          esac
       - name: Verify conan.lock freshness
         run: |
-          conan lock create . -pr=${{ steps.profile.outputs.path }} -s compiler.cppstd=23 --lockfile-out=/tmp/fresh.lock
+          conan lock create . -pr=profiles/default --lockfile-out=/tmp/fresh.lock
           diff conan.lock /tmp/fresh.lock
-      - run: CONAN_PROFILE=${{ steps.profile.outputs.path }} make bootstrap
-      - run: cmake --preset ${{ matrix.preset }} -DWARNINGS_AS_ERRORS=ON
-      - run: cmake --build --preset ${{ matrix.preset }}
-      - run: ctest --preset ${{ matrix.preset }}
+      - run: make bootstrap
+      - run: make ${{ matrix.preset }}
       - if: matrix.preset == 'coverage'
         uses: actions/upload-artifact@v4
         with:
@@ -60,10 +49,7 @@ jobs:
           path: build/coverage/coverage-report/
 
   lint:
-    runs-on: ubuntu-24.04
-    env:
-      CC: gcc
-      CXX: g++
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: conan-io/setup-conan@v1

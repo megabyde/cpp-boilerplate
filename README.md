@@ -45,7 +45,7 @@ This boilerplate currently supports macOS and Linux.
 ```console
 git clone https://github.com/megabyde/cpp-boilerplate.git
 cd cpp-boilerplate
-make bootstrap
+make bootstrap          # one-time; generates ConanPresets.json
 make debug
 ```
 
@@ -65,22 +65,19 @@ The checked-in `CMakePresets.json` owns the public preset names. Conan owns tool
 generated `ConanPresets.json` is an implementation detail, not an interface; `make bootstrap` is
 the one-time per-clone step that materializes it.
 
-### Sanitizers
+### Sanitizers (ASAN + UBSAN)
 
 ```console
 make sanitize
 ```
 
-This uses a dedicated sanitizer build tree under `build/sanitize`.
+This uses a dedicated sanitizer build tree under `build/sanitize` and a Conan
+sanitize profile so dependencies are rebuilt with matching instrumentation.
 
 > [!NOTE]
 > Conan owns the dependency graph, generator, toolchain, and ABI settings. If you switch the Conan
 > configuration, rerun `make bootstrap` or the matching public `make` target and keep using the
 > same public CMake preset names.
-
-> [!NOTE]
-> Sanitizer instrumentation currently applies to first-party code only. Conan dependencies are built
-> with the selected debug profile, not a dedicated sanitizer profile overlay.
 
 ### Tests
 

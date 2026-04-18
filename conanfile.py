@@ -17,7 +17,7 @@ class CppBoilerplateConan(ConanFile):
     default_options = {
         "spdlog/*:header_only": False,
         "spdlog/*:shared": False,
-        "spdlog/*:use_std_fmt": False,
+        "spdlog/*:use_std_fmt": False,  # use bundled fmt to exercise the dep graph
     }
 
     def _cmake_generator(self):
