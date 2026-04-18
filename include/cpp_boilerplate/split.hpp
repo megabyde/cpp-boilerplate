@@ -6,8 +6,7 @@
 
 namespace cpp_boilerplate {
 
-inline std::vector<std::string_view>
-split_views(std::string_view record, char delimiter = ',')
+inline std::vector<std::string_view> split_views(std::string_view record, char delimiter = ',')
 {
     std::vector<std::string_view> fields;
 
@@ -25,8 +24,7 @@ split_views(std::string_view record, char delimiter = ',')
     return fields;
 }
 
-inline std::vector<std::string>
-split(std::string_view record, char delimiter = ',')
+inline std::vector<std::string> split(std::string_view record, char delimiter = ',')
 {
     std::vector<std::string> fields;
 

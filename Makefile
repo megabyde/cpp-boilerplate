@@ -4,11 +4,11 @@ UNAME_S := $(shell uname -s)
 
 CONAN ?= conan
 CMAKE ?= cmake
-LCOV ?= lcov
-GENHTML ?= genhtml
+GCOVR ?= gcovr
 
 COLOR_CYAN := \033[36m
 COLOR_RESET := \033[0m
+CONAN_PRESETS := ConanPresets.json
 
 CLANG_FORMAT ?= $(if $(LLVM_BIN),$(LLVM_BIN)/clang-format,clang-format)
 CLANG_TIDY ?= $(if $(LLVM_BIN),$(LLVM_BIN)/clang-tidy,clang-tidy)
@@ -21,12 +21,27 @@ endif
 
 .SECONDEXPANSION:
 
+define bootstrap-check
+@if [ ! -f $(CONAN_PRESETS) ]; then \
+	echo "error: $(CONAN_PRESETS) missing. Run 'make bootstrap' first." >&2; \
+	exit 1; \
+fi
+endef
+
 # ---------------------------------------------------------------------------
-# Conan configuration — only two build types. ASan and coverage are just
+# Conan configuration — only two build types. Sanitizers and coverage are just
 # CMake cache variables layered on top of the debug toolchain.
 # ---------------------------------------------------------------------------
 CONAN_STD := -s compiler.cppstd=23
-CONAN_INSTALL_ARGS := $(CONAN_STD) --build=missing --lockfile=conan.lock
+CONAN_PROFILE_Linux := profiles/linux
+CONAN_PROFILE_Darwin := profiles/macos
+CONAN_PROFILE ?= $(CONAN_PROFILE_$(UNAME_S))
+
+ifeq ($(CONAN_PROFILE),)
+$(error unsupported host OS '$(UNAME_S)'; set CONAN_PROFILE=profiles/<name> to override)
+endif
+
+CONAN_INSTALL_ARGS := $(CONAN_STD) --build=missing --lockfile=conan.lock -pr=$(CONAN_PROFILE)
 
 CONAN_BUILD_TYPE_debug   := Debug
 CONAN_BUILD_TYPE_release := Release
@@ -35,13 +50,9 @@ CONAN_BUILD_TYPE_release := Release
 # Paths
 # ---------------------------------------------------------------------------
 STAMP_DIR := build/.stamps
-COVERAGE_DIR := build/DebugCoverage
-FORMAT_FILES := $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
+COVERAGE_DIR := build/coverage
+FORMAT_FILES = $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
 TIDY_SOURCES := $(shell find src tests -type f -name '*.cpp')
-LCOV_IGNORE_ERRORS_Linux := mismatch
-LCOV_IGNORE_ERRORS_Darwin := format,format,mismatch,unsupported
-LCOV_IGNORE_ERRORS ?= $(LCOV_IGNORE_ERRORS_$(UNAME_S))
-LCOV_CAPTURE_ARGS := $(if $(LCOV_IGNORE_ERRORS),--ignore-errors $(LCOV_IGNORE_ERRORS),)
 
 define require-tool
 	command -v $(1) >/dev/null || { echo "$(1) not found"; exit 1; }
@@ -50,9 +61,9 @@ endef
 # ---------------------------------------------------------------------------
 # Conan lock file (lazy — regenerated when conanfile.py changes)
 # ---------------------------------------------------------------------------
-conan.lock: conanfile.py
+conan.lock: conanfile.py $(CONAN_PROFILE)
 	echo "Regenerating conan.lock..."
-	$(CONAN) lock create . $(CONAN_STD)
+	$(CONAN) lock create . $(CONAN_STD) -pr=$(CONAN_PROFILE) --lockfile-out=conan.lock
 
 # ---------------------------------------------------------------------------
 # Conan install (single generic pattern rule)
@@ -72,58 +83,45 @@ help: ## Show this help message
 	/^[a-zA-Z_-]+:.*##/ {printf "  $(COLOR_CYAN)%-16s$(COLOR_RESET) %s\n", $$1, $$2}' \
 	$(MAKEFILE_LIST)
 
-# ---------------------------------------------------------------------------
-# Conan profile and install targets
-# ---------------------------------------------------------------------------
-.PHONY: conan-profile
-conan-profile: ## Detect the default Conan profile for this machine
-	echo "Detecting Conan profile..."
-	$(CONAN) profile detect --force
-
 .PHONY: bootstrap
 bootstrap: $(STAMP_DIR)/debug.stamp $(STAMP_DIR)/release.stamp ## Install Conan dependencies for all presets
 
 # ---------------------------------------------------------------------------
 # Build + test via workflow presets
 # ---------------------------------------------------------------------------
-CONAN_STAMP_debug    := debug
-CONAN_STAMP_release  := release
-CONAN_STAMP_asan     := debug
-CONAN_STAMP_coverage := debug
-
-CONAN_STAMP_lint     := debug
-
-.PHONY: debug release asan coverage
+.PHONY: debug release sanitize coverage
 debug:    ## Build via the debug workflow preset
 release:  ## Build and test via the release workflow preset
-asan:     ## Build and test via the asan workflow preset
-coverage: ## Build, test, and generate LCOV coverage report
+sanitize: ## Build and test via the sanitize workflow preset
+coverage: ## Build, test, and generate gcovr coverage report
 
-debug release asan: %: $(STAMP_DIR)/$$(CONAN_STAMP_%).stamp
-	$(CMAKE) --workflow --preset $*
+debug release sanitize:
+	$(call bootstrap-check)
+	$(CMAKE) --workflow --preset $@
 
 # ---------------------------------------------------------------------------
 # Coverage report generation (appended after the workflow runs tests)
 # ---------------------------------------------------------------------------
-coverage: $(STAMP_DIR)/$$(CONAN_STAMP_coverage).stamp
+coverage:
+	$(call bootstrap-check)
 	-find $(COVERAGE_DIR) -name '*.gcda' -delete
 	$(CMAKE) --workflow --preset coverage
-	$(call require-tool,$(LCOV))
-	$(call require-tool,$(GENHTML))
-	$(LCOV) --capture \
-		--directory $(COVERAGE_DIR) \
-		--base-directory $(abspath .) \
-		--no-external \
-		$(LCOV_CAPTURE_ARGS) \
-		--output-file $(COVERAGE_DIR)/coverage.info
-	rm -rf $(COVERAGE_DIR)/coverage-report
-	$(GENHTML) $(COVERAGE_DIR)/coverage.info --output-directory $(COVERAGE_DIR)/coverage-report
+	$(call require-tool,$(GCOVR))
+	mkdir -p $(COVERAGE_DIR)/coverage-report
+	$(GCOVR) --root . \
+		--filter 'include/' --filter 'src/' \
+		--exclude 'tests/' \
+		--html-details $(COVERAGE_DIR)/coverage-report/index.html \
+		--cobertura $(COVERAGE_DIR)/coverage.xml \
+		--txt-summary \
+		$(COVERAGE_DIR)
 
 # ---------------------------------------------------------------------------
 # Lint and format
 # ---------------------------------------------------------------------------
 .PHONY: lint
-lint: $(STAMP_DIR)/$$(CONAN_STAMP_lint).stamp ## Run clang-tidy against the debug compilation database
+lint: ## Run clang-tidy against the debug compilation database
+	$(call bootstrap-check)
 	$(call require-tool,$(CLANG_TIDY))
 	$(CMAKE) --preset debug
 	$(CLANG_TIDY) -p build/debug $(TIDY_SOURCES)
@@ -136,6 +134,7 @@ format: ## Format C++ sources in place with clang-format
 
 .PHONY: format-check
 format-check: ## Fail if C++ sources are not clang-format clean
+	$(call bootstrap-check)
 	echo "Checking C++ formatting..."
 	$(call require-tool,$(CLANG_FORMAT))
 	$(CLANG_FORMAT) --dry-run --Werror $(FORMAT_FILES)

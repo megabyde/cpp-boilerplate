@@ -8,48 +8,28 @@
 
 ## Overview
 
-A modern C++23 project template demonstrating end-to-end toolchain integration: Conan 2 dependency
-management, CMake presets, multi-configuration builds, testing, sanitizers, coverage, CI, and IDE
-seteup.
+A modern C++23 project template demonstrating end-to-end toolchain integration: Conan 2.5+
+dependency management, CMake presets, testing, sanitizers, coverage, CI, and IDE setup.
 
 This repository uses:
 
 - [CMake](https://cmake.org) presets and workflow presets as the public build interface
 - [Conan 2](https://conan.io) for dependency management
-- [Boost](https://www.boost.org) via Conan for portable utility libraries
+- [spdlog](https://github.com/gabime/spdlog) via Conan as the sample compiled dependency
 - [GoogleTest](https://github.com/google/googletest) via Conan
 
-The sample code intentionally stays small, but it demonstrates a few C++23-friendly defaults:
-
-- `std::string_view` for lightweight input handling
-- `std::views::transform` in the sample utility pipeline without adding extra template machinery
-
-The project keeps the public presets in the repository and lets Conan generate the toolchain and its
-internal presets:
-
-- the project owns [`CMakePresets.json`](CMakePresets.json)
-- Conan generates `ConanPresets.json`
-- the public presets (`debug`, `release`, `asan`, `coverage`) inherit from Conan's internal
-  presets
-
-The checked-in presets are the source of truth. The [`Makefile`](Makefile) is only a thin
-convenience wrapper around `conan install` plus the public CMake presets and workflows.
-
-This repository uses Conan's `CMakeConfigDeps` generator directly.
+The checked-in presets are the source of truth. [`Makefile`](Makefile) is a thin convenience
+wrapper around `make bootstrap` plus the public CMake presets and workflows.
 
 ## Prerequisites
 
 - CMake 3.28+
-- Conan 2
+- Conan 2.5+
 - Ninja or GNU Make on Unix-like systems
 - A compiler and standard library with working C++23 support
   - GCC 13+
   - LLVM Clang 17+
   - Apple Clang 17+ recommended
-
-> [!IMPORTANT]
-> If you are on a very new Apple Clang release, make sure your Conan installation and settings are
-> up to date before running `conan profile detect`.
 
 Conan chooses the CMake generator for you:
 
@@ -65,7 +45,7 @@ This boilerplate currently supports macOS and Linux.
 ```console
 git clone https://github.com/megabyde/cpp-boilerplate.git
 cd cpp-boilerplate
-make conan-profile
+make bootstrap
 make debug
 ```
 
@@ -73,38 +53,47 @@ Other local convenience targets:
 
 ```console
 make release
-make asan
+make sanitize
 make coverage
+make lint
+make format-check
 ```
 
-These targets do not define the build. They just run the matching Conan install command and then
-delegate to the public CMake presets and workflows.
+### Why CMakePresets.json includes ConanPresets.json
 
-### AddressSanitizer
+The checked-in `CMakePresets.json` owns the public preset names. Conan owns toolchain details. The
+generated `ConanPresets.json` is an implementation detail, not an interface; `make bootstrap` is
+the one-time per-clone step that materializes it.
+
+### Sanitizers
 
 ```console
-make asan
+make sanitize
 ```
 
-This uses a dedicated ASAN build tree under `build/DebugAsan`.
+This uses a dedicated sanitizer build tree under `build/sanitize`.
 
 > [!NOTE]
 > Conan owns the dependency graph, generator, toolchain, and ABI settings. If you switch the Conan
 > configuration, rerun `make bootstrap` or the matching public `make` target and keep using the
 > same public CMake preset names.
 
+> [!NOTE]
+> Sanitizer instrumentation currently applies to first-party code only. Conan dependencies are built
+> with the selected debug profile, not a dedicated sanitizer profile overlay.
+
 ### Tests
 
 Tests are controlled by CMake's built-in `BUILD_TESTING` option from `include(CTest)`. This
-project leaves it at the default `ON`, so the `release`, `asan`, and `coverage` workflows run the
+project leaves it at the default `ON`, so the `release`, `sanitize`, and `coverage` workflows run the
 test suite by default.
 
 ## Public presets
 
-- Configure presets: `debug`, `release`, `asan`, `coverage`
-- Build presets: `debug`, `release`, `asan`, `coverage`
-- Test presets: `debug`, `release`, `asan`, `coverage`
-- Workflow presets: `debug`, `release`, `asan`, `coverage`
+- Configure presets: `debug`, `release`, `sanitize`, `coverage`
+- Build presets: `debug`, `release`, `sanitize`, `coverage`
+- Test presets: `debug`, `release`, `sanitize`, `coverage`
+- Workflow presets: `debug`, `release`, `sanitize`, `coverage`
 
 The Conan-generated `conan-*` presets are internal implementation details and are not the public
 interface for developers or CI.
@@ -128,7 +117,7 @@ make lint
 
 ## Coverage
 
-Generate an LCOV tracefile and HTML report with:
+Generate a gcovr Cobertura report and HTML report with:
 
 ```console
 make coverage
@@ -136,35 +125,31 @@ make coverage
 
 This writes:
 
-- `build/DebugCoverage/coverage.info`
-- `build/DebugCoverage/coverage-report/index.html`
+- `build/coverage/coverage.xml`
+- `build/coverage/coverage-report/index.html`
 
-## Editor setup
+## IDE setup
 
 ### VS Code
 
 VS Code with CMake Tools will discover the checked-in public presets automatically after Conan
-generates `ConanPresets.json`. Run `make bootstrap` first to generate both debug and release Conan
-toolchains and presets.
+generates `ConanPresets.json`. Run `make bootstrap` first.
 
 Then open the folder, accept the recommended extensions, and select the matching public preset.
 For the checked-in launch configuration, choose the target you want in the CMake Tools sidebar and
-start the platform-specific `Debug: CMake Target (...)` configuration. F5 will run the public
-`debug` workflow first and then launch the selected executable from `build/Debug`. On macOS, the
-repository uses the CodeLLDB extension because the system `lldb` does not support the MI protocol
-used by `cppdbg`.
+start `Debug: CMake Target`. F5 builds the selected debug target and launches it from `build/debug`.
 
 ### CLion
 
 CLion can use the same public presets. Run `make bootstrap` first, then in CLion:
 
 1. Open the project root
-2. Select the `debug`, `release`, `asan`, or `coverage` preset as the active CMake profile
+2. Select the `debug`, `release`, `sanitize`, or `coverage` preset as the active CMake profile
 3. Reload CMake
 
 > [!NOTE]
 > No IDE-specific task files are required for the build. The presets are the source of truth.
-> `debug`, `asan`, and `coverage` each use their own build tree, so switching between them does not
+> `debug`, `sanitize`, and `coverage` each use their own build tree, so switching between them does not
 > require forcing a fresh reconfigure.
 
 ## Layout

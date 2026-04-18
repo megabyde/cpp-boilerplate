@@ -6,9 +6,11 @@
             "type": "shell",
             "command": "cmake",
             "args": [
-                "--workflow",
+                "--build",
                 "--preset",
-                "debug"
+                "debug",
+                "--target",
+                "${command:cmake.launchTargetName}"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
