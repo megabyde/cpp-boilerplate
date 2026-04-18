@@ -1,0 +1,9 @@
+line_width: 100
+tab_size: 4
+
+format:
+  dangle_parens: true
+  separate_ctrl_name_with_space: false
+  separate_fn_name_with_space: false
+  command_case: lower
+  keyword_case: upper

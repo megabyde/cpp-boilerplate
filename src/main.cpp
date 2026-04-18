@@ -1,10 +1,10 @@
-#include <cstddef>
-#include <exception>
-#include <string_view>
-
 #include <cpp_boilerplate/split.hpp>
 
 #include <spdlog/spdlog.h>
+
+#include <cstddef>
+#include <exception>
+#include <string_view>
 
 namespace {
 
@@ -14,8 +14,10 @@ void run()
     spdlog::info("cpp-boilerplate starting");
 
     constexpr std::string_view record = "alpha,beta,gamma";
-    for (std::size_t index = 0; std::string_view field : cpp_boilerplate::split_views(record)) {
-        spdlog::info("field {}: {}", index++, field);
+    std::size_t index = 0;
+    for (const auto field : cpp_boilerplate::split_views(record)) {
+        spdlog::info("field {}: {}", index, field);
+        ++index;
     }
 
     spdlog::info("done");
