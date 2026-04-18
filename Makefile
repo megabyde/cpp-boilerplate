@@ -1,6 +1,7 @@
 LLVM_PREFIX ?= $(shell brew --prefix llvm 2>/dev/null || true)
 LLVM_BIN := $(if $(wildcard $(LLVM_PREFIX)/bin/clang-format),$(LLVM_PREFIX)/bin,)
 UNAME_S := $(shell uname -s)
+CXX_NAME := $(notdir $(lastword $(CXX)))
 
 CMAKE_ARGS ?=
 
@@ -10,6 +11,18 @@ CONAN_PRESETS := ConanPresets.json
 
 CLANG_FORMAT ?= $(if $(LLVM_BIN),$(LLVM_BIN)/clang-format,clang-format)
 CLANG_TIDY ?= $(if $(LLVM_BIN),$(LLVM_BIN)/clang-tidy,clang-tidy)
+GCOV_TOOL := gcov
+GCOV_EXECUTABLE := gcov
+
+ifneq ($(findstring clang,$(CXX_NAME)),)
+ifeq ($(UNAME_S),Darwin)
+GCOV_TOOL := xcrun
+GCOV_EXECUTABLE := xcrun llvm-cov gcov
+else
+GCOV_TOOL := llvm-cov
+GCOV_EXECUTABLE := llvm-cov gcov
+endif
+endif
 
 .DEFAULT_GOAL := help
 
@@ -119,8 +132,10 @@ coverage: $(STAMP_DIR)/$$(CONAN_STAMP_coverage).stamp
 	cmake --build --preset coverage
 	ctest --preset coverage
 	$(call require-tool,python3)
+	$(call require-tool,$(GCOV_TOOL))
 	mkdir -p $(COVERAGE_DIR)/coverage-report
 	python3 -m gcovr --root . \
+		--gcov-executable "$(GCOV_EXECUTABLE)" \
 		--filter 'include/' --filter 'src/' \
 		--exclude 'tests/' \
 		--html-details $(COVERAGE_DIR)/coverage-report/index.html \
