@@ -118,9 +118,9 @@ coverage: $(STAMP_DIR)/$$(CONAN_STAMP_coverage).stamp
 	cmake --preset coverage $(CMAKE_ARGS)
 	cmake --build --preset coverage
 	ctest --preset coverage
-	$(call require-tool,gcovr)
+	$(call require-tool,python3)
 	mkdir -p $(COVERAGE_DIR)/coverage-report
-	gcovr --root . \
+	python3 -m gcovr --root . \
 		--filter 'include/' --filter 'src/' \
 		--exclude 'tests/' \
 		--html-details $(COVERAGE_DIR)/coverage-report/index.html \
