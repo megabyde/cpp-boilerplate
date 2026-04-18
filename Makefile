@@ -1,5 +1,3 @@
-LLVM_PREFIX ?= $(shell brew --prefix llvm 2>/dev/null || true)
-LLVM_BIN := $(if $(wildcard $(LLVM_PREFIX)/bin/clang-format),$(LLVM_PREFIX)/bin,)
 UNAME_S := $(shell uname -s)
 CXX_NAME := $(notdir $(lastword $(CXX)))
 
@@ -9,20 +7,26 @@ COLOR_CYAN := \033[36m
 COLOR_RESET := \033[0m
 CONAN_PRESETS := ConanPresets.json
 
-CLANG_FORMAT ?= $(if $(LLVM_BIN),$(LLVM_BIN)/clang-format,clang-format)
-CLANG_TIDY ?= $(if $(LLVM_BIN),$(LLVM_BIN)/clang-tidy,clang-tidy)
+LLVM_BIN :=
 GCOV_TOOL := gcov
 GCOV_EXECUTABLE := gcov
 
-ifneq ($(findstring clang,$(CXX_NAME)),)
 ifeq ($(UNAME_S),Darwin)
+LLVM_PREFIX ?= $(shell brew --prefix llvm 2>/dev/null || true)
+LLVM_BIN := $(if $(wildcard $(LLVM_PREFIX)/bin/clang-format),$(LLVM_PREFIX)/bin,)
+ifneq ($(findstring clang,$(CXX_NAME)),)
 GCOV_TOOL := xcrun
 GCOV_EXECUTABLE := xcrun llvm-cov gcov
+endif
 else
+ifneq ($(findstring clang,$(CXX_NAME)),)
 GCOV_TOOL := llvm-cov
 GCOV_EXECUTABLE := llvm-cov gcov
 endif
 endif
+
+CLANG_FORMAT ?= $(if $(LLVM_BIN),$(LLVM_BIN)/clang-format,clang-format)
+CLANG_TIDY ?= $(if $(LLVM_BIN),$(LLVM_BIN)/clang-tidy,clang-tidy)
 
 .DEFAULT_GOAL := help
 
