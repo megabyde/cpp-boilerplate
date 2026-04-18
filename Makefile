@@ -2,6 +2,7 @@ UNAME_S := $(shell uname -s)
 CXX_NAME := $(notdir $(lastword $(CXX)))
 
 CMAKE_ARGS ?=
+LLVM_COV ?= $(shell command -v llvm-cov 2>/dev/null || command -v llvm-cov-18 2>/dev/null || command -v llvm-cov-17 2>/dev/null || command -v llvm-cov-16 2>/dev/null || true)
 
 COLOR_CYAN := \033[36m
 COLOR_RESET := \033[0m
@@ -20,8 +21,8 @@ GCOV_EXECUTABLE := xcrun llvm-cov gcov
 endif
 else
 ifneq ($(findstring clang,$(CXX_NAME)),)
-GCOV_TOOL := llvm-cov
-GCOV_EXECUTABLE := llvm-cov gcov
+GCOV_TOOL := $(if $(LLVM_COV),$(LLVM_COV),llvm-cov)
+GCOV_EXECUTABLE := $(GCOV_TOOL) gcov
 endif
 endif
 
