@@ -40,6 +40,8 @@ jobs:
         run: |
           conan lock create . -pr=profiles/default --lockfile-out=/tmp/fresh.lock
           diff conan.lock /tmp/fresh.lock
+      - if: matrix.preset == 'coverage'
+        run: python3 -m pip install --user gcovr
       - run: make bootstrap
       - run: make ${{ matrix.preset }}
       - if: matrix.preset == 'coverage'
