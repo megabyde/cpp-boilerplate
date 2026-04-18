@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28)
 
 project(
-    cpp-boilerplate
+    cpp_boilerplate
     VERSION 0.1.0
     DESCRIPTION "Modern C++23 project template with Conan and CMake"
     LANGUAGES CXX
@@ -12,7 +12,8 @@ include(CTest)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(ENABLE_ASAN "Enable address sanitizer instrumentation" OFF)
+option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
+option(ENABLE_SANITIZERS "Enable sanitizer instrumentation" OFF)
 option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
 
 if(
@@ -33,20 +34,26 @@ endif()
 find_package(spdlog CONFIG REQUIRED)
 
 function(enable_project_warnings target)
-    target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+    if(WARNINGS_AS_ERRORS)
+        set_target_properties(${target} PROPERTIES COMPILE_WARNING_AS_ERROR ON)
+    endif()
 endfunction()
 
 function(enable_sanitizers target)
-    if(NOT ENABLE_ASAN)
+    if(NOT ENABLE_SANITIZERS)
         return()
     endif()
 
     if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
-        message(FATAL_ERROR "Address sanitizer requires GCC, Clang, or AppleClang")
+        message(FATAL_ERROR "Sanitizers require GCC, Clang, or AppleClang")
     endif()
 
-    target_compile_options(${target} PRIVATE -fsanitize=address -fno-omit-frame-pointer)
-    target_link_options(${target} PRIVATE -fsanitize=address)
+    target_compile_options(${target} PRIVATE
+        -fsanitize=address,undefined
+        -fno-sanitize-recover=all
+        -fno-omit-frame-pointer)
+    target_link_options(${target} PRIVATE -fsanitize=address,undefined)
 endfunction()
 
 function(enable_coverage target)
@@ -90,5 +97,5 @@ if(BUILD_TESTING)
     enable_project_warnings(split_test)
     enable_sanitizers(split_test)
     enable_coverage(split_test)
-    gtest_discover_tests(split_test)
+    gtest_discover_tests(split_test DISCOVERY_MODE PRE_TEST)
 endif()

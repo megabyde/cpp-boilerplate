@@ -1,15 +1,14 @@
 # Requires clang-format >= 16
 BasedOnStyle: LLVM
-Standard: Latest
+Standard: c++20
 #
 AccessModifierOffset: -4
-AlignConsecutiveAssignments: true
+AlignConsecutiveAssignments: false
 AlignEscapedNewlines: Left
 AlignOperands: true
 AlignTrailingComments: true
-AlignConsecutiveDeclarations: true
+AlignConsecutiveDeclarations: false
 AllowShortFunctionsOnASingleLine: Inline
-BreakAfterReturnType: TopLevelDefinitions
 AlwaysBreakTemplateDeclarations: false
 BreakBeforeBraces: Stroustrup
 ColumnLimit: 100
@@ -19,6 +18,6 @@ IndentCaseLabels: false
 IndentWidth: 4
 KeepEmptyLinesAtTheStartOfBlocks: false
 PointerAlignment: Left
-SortIncludes: false
+SortIncludes: CaseSensitive
 SpaceAfterCStyleCast: true
 # vim: ft=yaml

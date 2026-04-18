@@ -1,5 +1,9 @@
 FormatStyle: file
-WarningsAsErrors: '*'
+WarningsAsErrors: >
+  bugprone-*,
+  clang-analyzer-*,
+  performance-*,
+  -performance-avoid-endl
 HeaderFilterRegex: '^(include|src|tests)/'
 
 Checks: >

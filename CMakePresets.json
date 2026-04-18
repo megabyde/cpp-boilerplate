@@ -13,23 +13,27 @@
       "name": "debug",
       "displayName": "Debug",
       "description": "Debug configuration backed by Conan's debug preset.",
-      "inherits": "conan-debug"
+      "inherits": "conan-debug",
+      "binaryDir": "${sourceDir}/build/debug",
+      "toolchainFile": "${sourceDir}/build/debug/generators/conan_toolchain.cmake"
     },
     {
       "name": "release",
       "displayName": "Release",
       "description": "Release configuration backed by Conan's release preset.",
-      "inherits": "conan-release"
+      "inherits": "conan-release",
+      "binaryDir": "${sourceDir}/build/release",
+      "toolchainFile": "${sourceDir}/build/release/generators/conan_toolchain.cmake"
     },
     {
-      "name": "asan",
-      "displayName": "AddressSanitizer",
-      "description": "Debug configuration with address sanitizer enabled.",
+      "name": "sanitize",
+      "displayName": "Sanitizers",
+      "description": "Debug configuration with sanitizer instrumentation enabled.",
       "inherits": "conan-debug",
-      "binaryDir": "${sourceDir}/build/DebugAsan",
-      "toolchainFile": "${sourceDir}/build/Debug/generators/conan_toolchain.cmake",
+      "binaryDir": "${sourceDir}/build/sanitize",
+      "toolchainFile": "${sourceDir}/build/debug/generators/conan_toolchain.cmake",
       "cacheVariables": {
-        "ENABLE_ASAN": "ON"
+        "ENABLE_SANITIZERS": "ON"
       }
     },
     {
@@ -37,8 +41,8 @@
       "displayName": "Coverage",
       "description": "Debug configuration with coverage instrumentation enabled.",
       "inherits": "conan-debug",
-      "binaryDir": "${sourceDir}/build/DebugCoverage",
-      "toolchainFile": "${sourceDir}/build/Debug/generators/conan_toolchain.cmake",
+      "binaryDir": "${sourceDir}/build/coverage",
+      "toolchainFile": "${sourceDir}/build/debug/generators/conan_toolchain.cmake",
       "cacheVariables": {
         "ENABLE_COVERAGE": "ON"
       }
@@ -56,8 +60,8 @@
       "configuration": "Release"
     },
     {
-      "name": "asan",
-      "configurePreset": "asan",
+      "name": "sanitize",
+      "configurePreset": "sanitize",
       "configuration": "Debug"
     },
     {
@@ -84,8 +88,8 @@
       }
     },
     {
-      "name": "asan",
-      "configurePreset": "asan",
+      "name": "sanitize",
+      "configurePreset": "sanitize",
       "configuration": "Debug",
       "output": {
         "outputOnFailure": true
@@ -132,19 +136,19 @@
       ]
     },
     {
-      "name": "asan",
+      "name": "sanitize",
       "steps": [
         {
           "type": "configure",
-          "name": "asan"
+          "name": "sanitize"
         },
         {
           "type": "build",
-          "name": "asan"
+          "name": "sanitize"
         },
         {
           "type": "test",
-          "name": "asan"
+          "name": "sanitize"
         }
       ]
     },

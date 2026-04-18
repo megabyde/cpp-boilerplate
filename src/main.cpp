@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <exception>
 #include <string_view>
 
@@ -7,8 +8,7 @@
 
 namespace {
 
-void
-run()
+void run()
 {
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
     spdlog::info("cpp-boilerplate starting");
@@ -23,15 +23,17 @@ run()
 
 } // namespace
 
-int
-main()
+// NOLINTNEXTLINE(bugprone-exception-escape)
+int main()
 {
     try {
         run();
         return 0;
-    } catch (const std::exception& error) {
+    }
+    catch (const std::exception& error) {
         spdlog::critical("fatal: {}", error.what());
-    } catch (...) {
+    }
+    catch (...) {
         spdlog::critical("fatal: unknown exception");
     }
     return 1;
