@@ -43,6 +43,8 @@ jobs:
       - if: matrix.preset == 'coverage'
         run: python3 -m pip install --break-system-packages --user gcovr
       - run: make bootstrap
+      - if: matrix.preset == 'sanitize'
+        run: make bootstrap-sanitize
       - run: make ${{ matrix.preset }}
       - if: matrix.preset == 'coverage'
         uses: actions/upload-artifact@v4

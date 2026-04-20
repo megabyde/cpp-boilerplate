@@ -1,33 +1,25 @@
 UNAME_S := $(shell uname -s)
-CXX_NAME := $(notdir $(lastword $(CXX)))
 
 CMAKE_ARGS ?=
-LLVM_COV ?= $(shell command -v llvm-cov 2>/dev/null || command -v llvm-cov-18 2>/dev/null || command -v llvm-cov-17 2>/dev/null || command -v llvm-cov-16 2>/dev/null || true)
 
 COLOR_CYAN := \033[36m
 COLOR_RESET := \033[0m
-CONAN_PRESETS := ConanPresets.json
 
-LLVM_BIN :=
-GCOV_TOOL := gcov
-GCOV_EXECUTABLE := gcov
+GCOV_EXECUTABLE_Linux := gcov
+GCOV_EXECUTABLE_Darwin := xcrun llvm-cov gcov
 
 ifeq ($(UNAME_S),Darwin)
-LLVM_PREFIX ?= $(shell brew --prefix llvm 2>/dev/null || true)
-LLVM_BIN := $(if $(wildcard $(LLVM_PREFIX)/bin/clang-format),$(LLVM_PREFIX)/bin,)
-ifneq ($(findstring clang,$(CXX_NAME)),)
-GCOV_TOOL := xcrun
-GCOV_EXECUTABLE := xcrun llvm-cov gcov
-endif
-else
-ifneq ($(findstring clang,$(CXX_NAME)),)
-GCOV_TOOL := $(if $(LLVM_COV),$(LLVM_COV),llvm-cov)
-GCOV_EXECUTABLE := $(GCOV_TOOL) gcov
+HOMEBREW_LLVM_PREFIX := $(shell brew --prefix llvm 2>/dev/null)
+ifneq ($(HOMEBREW_LLVM_PREFIX),)
+export PATH := $(HOMEBREW_LLVM_PREFIX)/bin:$(PATH)
 endif
 endif
 
-CLANG_FORMAT ?= $(if $(LLVM_BIN),$(LLVM_BIN)/clang-format,clang-format)
-CLANG_TIDY ?= $(if $(LLVM_BIN),$(LLVM_BIN)/clang-tidy,clang-tidy)
+GCOV_EXECUTABLE ?= $(GCOV_EXECUTABLE_$(UNAME_S))
+
+ifeq ($(GCOV_EXECUTABLE),)
+$(error unsupported host OS '$(UNAME_S)'; set GCOV_EXECUTABLE='<cmd>' to override)
+endif
 
 .DEFAULT_GOAL := help
 
@@ -37,24 +29,12 @@ endif
 
 .SECONDEXPANSION:
 
-define bootstrap-check
-@if [ ! -f $(CONAN_PRESETS) ]; then \
-	echo "error: $(CONAN_PRESETS) missing. Run 'make bootstrap' first." >&2; \
-	exit 1; \
-fi
-endef
-
 # ---------------------------------------------------------------------------
 # Conan configuration — release gets its own profile state, coverage reuses the
 # debug toolchain, and sanitize uses a dedicated Conan profile so dependency
 # binaries are rebuilt with matching instrumentation.
 # ---------------------------------------------------------------------------
-CONAN_STD := -s compiler.cppstd=23
 CONAN_PROFILE ?= profiles/default
-CONAN_INSTALL_ARGS := $(CONAN_STD) --build=missing --lockfile=conan.lock
-
-CONAN_BUILD_TYPE_debug   := Debug
-CONAN_BUILD_TYPE_release := Release
 CONAN_STAMP_debug := debug
 CONAN_STAMP_release := release
 CONAN_STAMP_sanitize := sanitize
@@ -65,8 +45,8 @@ CONAN_STAMP_coverage := debug
 # ---------------------------------------------------------------------------
 STAMP_DIR := build/.stamps
 COVERAGE_DIR := build/coverage
-FORMAT_FILES = $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
-TIDY_SOURCES := $(shell find src tests -type f -name '*.cpp')
+FORMAT_SOURCES = $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
+TIDY_SOURCES = $(shell find src tests -type f -name '*.cpp')
 
 define require-tool
 	command -v $(1) >/dev/null || { echo "$(1) not found"; exit 1; }
@@ -77,21 +57,23 @@ endef
 # ---------------------------------------------------------------------------
 conan.lock: conanfile.py $(CONAN_PROFILE)
 	echo "Regenerating conan.lock..."
-	conan lock create . $(CONAN_STD) -pr=$(CONAN_PROFILE) --lockfile-out=conan.lock
+	conan lock create . -s compiler.cppstd=23 -pr=$(CONAN_PROFILE) --lockfile-out=conan.lock
 
 # ---------------------------------------------------------------------------
 # Conan install
 # ---------------------------------------------------------------------------
-$(STAMP_DIR)/%.stamp: conan.lock
-	echo "Installing Conan dependencies ($*)..."
+$(STAMP_DIR)/debug.stamp: BUILD_TYPE = Debug
+$(STAMP_DIR)/release.stamp: BUILD_TYPE = Release
+$(STAMP_DIR)/debug.stamp $(STAMP_DIR)/release.stamp: conan.lock
+	echo "Installing Conan dependencies ($(BUILD_TYPE))..."
 	mkdir -p $(STAMP_DIR)
-	conan install . -pr=$(CONAN_PROFILE) -s build_type=$(CONAN_BUILD_TYPE_$*) $(CONAN_INSTALL_ARGS)
+	conan install . -pr=$(CONAN_PROFILE) -s compiler.cppstd=23 -s build_type=$(BUILD_TYPE) --build=missing --lockfile=conan.lock
 	touch $@
 
 $(STAMP_DIR)/sanitize.stamp: conan.lock
 	echo "Installing Conan dependencies (sanitize)..."
 	mkdir -p $(STAMP_DIR)
-	conan install . -pr=profiles/sanitize $(CONAN_INSTALL_ARGS)
+	conan install . -pr=profiles/sanitize -s compiler.cppstd=23 --build=missing --lockfile=conan.lock
 	touch $@
 
 # ---------------------------------------------------------------------------
@@ -101,43 +83,43 @@ $(STAMP_DIR)/sanitize.stamp: conan.lock
 help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make [options] $(COLOR_CYAN)[target] ...$(COLOR_RESET)\n\n"} \
 	/^[a-zA-Z_-]+:.*##/ {printf "  $(COLOR_CYAN)%-16s$(COLOR_RESET) %s\n", $$1, $$2}' \
-	$(MAKEFILE_LIST)
+		$(MAKEFILE_LIST)
 
 .PHONY: bootstrap
-bootstrap: $(STAMP_DIR)/debug.stamp $(STAMP_DIR)/release.stamp $(STAMP_DIR)/sanitize.stamp ## Install Conan dependencies for all presets
+bootstrap: $(STAMP_DIR)/debug.stamp $(STAMP_DIR)/release.stamp ## Install Conan dependencies for debug+release
+.PHONY: bootstrap-sanitize
+bootstrap-sanitize: $(STAMP_DIR)/sanitize.stamp ## Install sanitizer-instrumented Conan dependencies
 
 # ---------------------------------------------------------------------------
 # Build + test via workflow presets
 # ---------------------------------------------------------------------------
-.PHONY: debug release sanitize coverage
-debug:    ## Build via the debug workflow preset
-release:  ## Build and test via the release workflow preset
+.PHONY: debug
+debug: ## Build and test via the debug workflow preset
+
+.PHONY: release
+release: ## Build and test via the release workflow preset
+
+.PHONY: sanitize
 sanitize: ## Build and test via the sanitize workflow preset
-coverage: ## Build, test, and generate gcovr coverage report
 
-debug: $(STAMP_DIR)/debug.stamp
-	$(call bootstrap-check)
-	cmake --preset debug $(CMAKE_ARGS)
-	cmake --build --preset debug
+.PHONY: coverage
+coverage: coverage-data-clean ## Build and test via the coverage workflow preset
 
-release sanitize: %: $(STAMP_DIR)/$$(CONAN_STAMP_%).stamp
-	$(call bootstrap-check)
+debug release sanitize coverage: %: $(STAMP_DIR)/$$(CONAN_STAMP_%).stamp
 	cmake --preset $@ $(CMAKE_ARGS)
 	cmake --build --preset $@
 	ctest --preset $@
 
 # ---------------------------------------------------------------------------
-# Coverage report generation (appended after the workflow runs tests)
+# Coverage report generation
 # ---------------------------------------------------------------------------
-coverage: $(STAMP_DIR)/$$(CONAN_STAMP_coverage).stamp
-	$(call bootstrap-check)
-	rm -rf $(COVERAGE_DIR)
-	mkdir -p $(COVERAGE_DIR)
-	cmake --preset coverage $(CMAKE_ARGS)
-	cmake --build --preset coverage
-	ctest --preset coverage
+.PHONY: coverage-data-clean
+coverage-data-clean:
+	-find $(COVERAGE_DIR) -name '*.gcda' -delete
+
+.PHONY: coverage-report
+coverage-report: coverage ## Generate gcovr coverage report after running coverage
 	$(call require-tool,python3)
-	$(call require-tool,$(GCOV_TOOL))
 	mkdir -p $(COVERAGE_DIR)/coverage-report
 	python3 -m gcovr --root . \
 		--gcov-executable "$(GCOV_EXECUTABLE)" \
@@ -152,24 +134,22 @@ coverage: $(STAMP_DIR)/$$(CONAN_STAMP_coverage).stamp
 # Lint and format
 # ---------------------------------------------------------------------------
 .PHONY: lint
-lint: ## Run clang-tidy against the debug compilation database
-	$(call bootstrap-check)
-	$(call require-tool,$(CLANG_TIDY))
+lint: $(STAMP_DIR)/debug.stamp ## Run clang-tidy against the debug compilation database
+	$(call require-tool,clang-tidy)
 	cmake --preset debug $(CMAKE_ARGS)
-	$(CLANG_TIDY) -p build/debug $(TIDY_SOURCES)
+	PATH="$(PATH)" clang-tidy -p build/debug $(TIDY_SOURCES)
 
 .PHONY: format
 format: ## Format C++ sources in place with clang-format
 	echo "Formatting C++ sources..."
-	$(call require-tool,$(CLANG_FORMAT))
-	$(CLANG_FORMAT) -i $(FORMAT_FILES)
+	$(call require-tool,clang-format)
+	PATH="$(PATH)" clang-format -i $(FORMAT_SOURCES)
 
 .PHONY: format-check
 format-check: ## Fail if C++ sources are not clang-format clean
-	$(call bootstrap-check)
 	echo "Checking C++ formatting..."
-	$(call require-tool,$(CLANG_FORMAT))
-	$(CLANG_FORMAT) --dry-run --Werror $(FORMAT_FILES)
+	$(call require-tool,clang-format)
+	PATH="$(PATH)" clang-format --dry-run --Werror $(FORMAT_SOURCES)
 
 # ---------------------------------------------------------------------------
 # Lock and clean
@@ -180,4 +160,4 @@ lock: conan.lock ## Ensure conan.lock is up to date
 .PHONY: clean
 clean: ## Remove generated build artifacts and Conan preset files
 	echo "Removing generated artifacts..."
-	rm -rf build/ ConanPresets.json compile_commands.json CMakeUserPresets.json
+	rm -rf build/ compile_commands.json CMakeUserPresets.json ConanPresets.json

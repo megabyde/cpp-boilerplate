@@ -24,9 +24,15 @@ class CppBoilerplateConan(ConanFile):
         return "Ninja" if shutil.which("ninja") else "Unix Makefiles"
 
     def layout(self):
+        if self.conf.get("user.project:sanitize", default=False, check_type=bool):
+            self.folders.build_folder_vars = ["const.sanitize"]
         cmake_layout(self, generator=self._cmake_generator(), build_folder="build")
         bt = str(self.settings.build_type).lower()
-        self.folders.build = f"build/{bt}"
+        if self.conf.get("user.project:sanitize", default=False, check_type=bool):
+            folder = "build/sanitize"
+        else:
+            folder = f"build/{bt}"
+        self.folders.build = folder
         self.folders.generators = f"{self.folders.build}/generators"
 
     def build_requirements(self):
