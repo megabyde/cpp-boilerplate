@@ -13,13 +13,13 @@ dependency management, CMake presets, testing, sanitizers, coverage, CI, and IDE
 
 This repository uses:
 
-- [CMake](https://cmake.org) presets and workflow presets as the public build interface
+- [CMake](https://cmake.org) configure, build, and test presets as the public build interface
 - [Conan 2](https://conan.io) for dependency management
 - [spdlog](https://github.com/gabime/spdlog) via Conan as the sample compiled dependency
 - [GoogleTest](https://github.com/google/googletest) via Conan
 
 The checked-in presets are the source of truth. [`Makefile`](Makefile) is a thin convenience
-wrapper around `make bootstrap` plus the public CMake presets and workflows.
+wrapper around `make bootstrap` plus the public CMake presets.
 
 ## Prerequisites
 
@@ -74,6 +74,9 @@ make sanitize
 This uses a dedicated sanitizer build tree under `build/sanitize` and a Conan
 sanitize profile so dependencies are rebuilt with matching instrumentation.
 
+The default `make bootstrap` does not install sanitizer-instrumented dependencies. Run
+`make bootstrap-sanitize` or `make sanitize` when you need them.
+
 > [!NOTE]
 > Conan owns the dependency graph, generator, toolchain, and ABI settings. If you switch the Conan
 > configuration, rerun `make bootstrap` or the matching public `make` target and keep using the
@@ -82,15 +85,14 @@ sanitize profile so dependencies are rebuilt with matching instrumentation.
 ### Tests
 
 Tests are controlled by CMake's built-in `BUILD_TESTING` option from `include(CTest)`. This
-project leaves it at the default `ON`, so the `release`, `sanitize`, and `coverage` workflows run the
-test suite by default.
+project leaves it at the default `ON`, so `make debug`, `make release`, `make sanitize`, and
+`make coverage` all run the gtest suite.
 
 ## Public presets
 
 - Configure presets: `debug`, `release`, `sanitize`, `coverage`
 - Build presets: `debug`, `release`, `sanitize`, `coverage`
 - Test presets: `debug`, `release`, `sanitize`, `coverage`
-- Workflow presets: `debug`, `release`, `sanitize`, `coverage`
 
 The Conan-generated `conan-*` presets are internal implementation details and are not the public
 interface for developers or CI.
@@ -155,4 +157,4 @@ CLion can use the same public presets. Run `make bootstrap` first, then in CLion
 - `src/`: application sources
 - `tests/`: unit tests
 - `conanfile.py`: Conan dependency definition
-- `CMakePresets.json`: project-owned public presets and workflows
+- `CMakePresets.json`: project-owned public presets

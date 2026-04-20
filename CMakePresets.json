@@ -29,9 +29,9 @@
       "name": "sanitize",
       "displayName": "Sanitizers",
       "description": "Debug configuration with sanitizer instrumentation enabled.",
-      "inherits": "conan-debug",
+      "inherits": "conan-sanitize-debug",
       "binaryDir": "${sourceDir}/build/sanitize",
-      "toolchainFile": "${sourceDir}/build/debug/generators/conan_toolchain.cmake",
+      "toolchainFile": "${sourceDir}/build/sanitize/generators/conan_toolchain.cmake",
       "cacheVariables": {
         "ENABLE_SANITIZERS": "ON"
       }
@@ -102,72 +102,6 @@
       "output": {
         "outputOnFailure": true
       }
-    }
-  ],
-  "workflowPresets": [
-    {
-      "name": "debug",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "debug"
-        },
-        {
-          "type": "build",
-          "name": "debug"
-        }
-      ]
-    },
-    {
-      "name": "release",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "release"
-        },
-        {
-          "type": "build",
-          "name": "release"
-        },
-        {
-          "type": "test",
-          "name": "release"
-        }
-      ]
-    },
-    {
-      "name": "sanitize",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "sanitize"
-        },
-        {
-          "type": "build",
-          "name": "sanitize"
-        },
-        {
-          "type": "test",
-          "name": "sanitize"
-        }
-      ]
-    },
-    {
-      "name": "coverage",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "coverage"
-        },
-        {
-          "type": "build",
-          "name": "coverage"
-        },
-        {
-          "type": "test",
-          "name": "coverage"
-        }
-      ]
     }
   ]
 }

@@ -4,6 +4,7 @@ include(default)
 build_type=Debug
 
 [conf]
+user.project:sanitize=True
 tools.build:cflags=["-fsanitize=address,undefined", "-fno-omit-frame-pointer", "-fno-sanitize-recover=all"]
 tools.build:cxxflags=["-fsanitize=address,undefined", "-fno-omit-frame-pointer", "-fno-sanitize-recover=all"]
 tools.build:sharedlinkflags=["-fsanitize=address,undefined"]

@@ -11,9 +11,9 @@ TEST(SplitTest, SplitsCommaSeparatedFields)
     EXPECT_EQ(cpp_boilerplate::split_views_vec("52930489,aaa,18,1222"), expected);
 }
 
-TEST(SplitTest, ReturnsSingleEmptyFieldForEmptyInput)
+TEST(SplitTest, ReturnsEmptySequenceForEmptyInput)
 {
-    const std::vector<std::string_view> expected{""};
+    const std::vector<std::string_view> expected{};
     EXPECT_EQ(cpp_boilerplate::split_views_vec(""), expected);
 }
 
