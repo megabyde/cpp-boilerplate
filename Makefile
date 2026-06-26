@@ -31,8 +31,9 @@ endif
 
 # ---------------------------------------------------------------------------
 # Conan configuration — release gets its own profile state, coverage reuses the
-# debug toolchain, and sanitize uses a dedicated Conan profile so dependency
-# binaries are rebuilt with matching instrumentation.
+# debug toolchain, and sanitize uses a dedicated Conan profile plus a custom
+# compiler.sanitizer setting (conan/settings_user.yml) so instrumented dependency
+# binaries get a distinct package_id and are rebuilt rather than reused from cache.
 # ---------------------------------------------------------------------------
 CONAN_PROFILE ?= profiles/default
 CONAN_STAMP_debug := debug
@@ -70,9 +71,10 @@ $(STAMP_DIR)/debug.stamp $(STAMP_DIR)/release.stamp: conan.lock
 	conan install . -pr=$(CONAN_PROFILE) -s compiler.cppstd=23 -s build_type=$(BUILD_TYPE) --build=missing --lockfile=conan.lock
 	touch $@
 
-$(STAMP_DIR)/sanitize.stamp: conan.lock
+$(STAMP_DIR)/sanitize.stamp: conan.lock conan/settings_user.yml
 	echo "Installing Conan dependencies (sanitize)..."
 	mkdir -p $(STAMP_DIR)
+	conan config install conan
 	conan install . -pr=profiles/sanitize -s compiler.cppstd=23 --build=missing --lockfile=conan.lock
 	touch $@
 
