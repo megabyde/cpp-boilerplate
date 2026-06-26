@@ -58,7 +58,7 @@ endef
 # ---------------------------------------------------------------------------
 conan.lock: conanfile.py $(CONAN_PROFILE)
 	echo "Regenerating conan.lock..."
-	conan lock create . -s compiler.cppstd=23 -pr=$(CONAN_PROFILE) --lockfile-out=conan.lock
+	conan lock create . -pr=$(CONAN_PROFILE) --lockfile-out=conan.lock
 
 # ---------------------------------------------------------------------------
 # Conan install
@@ -68,7 +68,7 @@ $(STAMP_DIR)/release.stamp: BUILD_TYPE = Release
 $(STAMP_DIR)/debug.stamp $(STAMP_DIR)/release.stamp: conan.lock
 	echo "Installing Conan dependencies ($(BUILD_TYPE))..."
 	mkdir -p $(STAMP_DIR)
-	conan install . -pr=$(CONAN_PROFILE) -s compiler.cppstd=23 -s build_type=$(BUILD_TYPE) --build=missing --lockfile=conan.lock
+	conan install . -pr=$(CONAN_PROFILE) -s build_type=$(BUILD_TYPE) --build=missing --lockfile=conan.lock
 	touch $@
 
 $(STAMP_DIR)/sanitize.stamp: conan.lock conan/settings_user.yml
