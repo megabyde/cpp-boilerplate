@@ -6,6 +6,8 @@
 
 namespace cpp_boilerplate {
 
+// The returned fields alias the storage backing `record`. The caller must keep that
+// buffer alive for as long as the results are used; passing a temporary string dangles.
 [[nodiscard]] constexpr auto split_views(std::string_view record, char delimiter = ',')
 {
     return record | std::views::split(delimiter) | std::views::transform([](auto subrange) {

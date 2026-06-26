@@ -1,6 +1,6 @@
 # Requires clang-format >= 16
 BasedOnStyle: LLVM
-Standard: c++20
+Standard: Latest
 #
 AccessModifierOffset: -4
 AlignConsecutiveAssignments: false
