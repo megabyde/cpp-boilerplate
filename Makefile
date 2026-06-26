@@ -84,7 +84,7 @@ $(STAMP_DIR)/sanitize.stamp: conan.lock conan/settings_user.yml
 .PHONY: help
 help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make [options] $(COLOR_CYAN)[target] ...$(COLOR_RESET)\n\n"} \
-	/^[a-zA-Z_-]+:.*##/ {printf "  $(COLOR_CYAN)%-16s$(COLOR_RESET) %s\n", $$1, $$2}' \
+	/^[a-zA-Z_-]+:.*##/ {printf "  $(COLOR_CYAN)%-20s$(COLOR_RESET) %s\n", $$1, $$2}' \
 		$(MAKEFILE_LIST)
 
 .PHONY: bootstrap
