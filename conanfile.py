@@ -24,16 +24,19 @@ class CppBoilerplateConan(ConanFile):
         return "Ninja" if shutil.which("ninja") else "Unix Makefiles"
 
     def layout(self):
-        if self.conf.get("user.project:sanitize", default=False, check_type=bool):
+        # The sanitize build shares Debug settings and is distinguished only by the
+        # compiler.sanitizer setting (see conan/settings_user.yml).
+        sanitize = bool(self.settings.get_safe("compiler.sanitizer"))
+        if sanitize:
+            # Names the generated Conan preset conan-sanitize-debug, which the
+            # checked-in CMakePresets sanitize preset inherits.
             self.folders.build_folder_vars = ["const.sanitize"]
         cmake_layout(self, generator=self._cmake_generator(), build_folder="build")
-        bt = str(self.settings.build_type).lower()
-        if self.conf.get("user.project:sanitize", default=False, check_type=bool):
-            folder = "build/sanitize"
-        else:
-            folder = f"build/{bt}"
+        # Flatten the generator output into build/<preset> so the paths line up with
+        # the checked-in CMakePresets binaryDir/toolchainFile.
+        folder = "build/sanitize" if sanitize else f"build/{str(self.settings.build_type).lower()}"
         self.folders.build = folder
-        self.folders.generators = f"{self.folders.build}/generators"
+        self.folders.generators = f"{folder}/generators"
 
     def build_requirements(self):
         self.test_requires("gtest/1.15.0")
