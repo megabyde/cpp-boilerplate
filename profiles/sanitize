@@ -2,6 +2,10 @@ include(default)
 
 [settings]
 build_type=Debug
+# Distinct package_id for instrumented dependency binaries. The flags below do the
+# actual instrumentation; this setting only keeps them from sharing a plain-Debug
+# package_id. Requires conan/settings_user.yml (installed by `make bootstrap-sanitize`).
+compiler.sanitizer=AddressUndefined
 
 [conf]
 user.project:sanitize=True

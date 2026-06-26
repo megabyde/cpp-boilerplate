@@ -1,0 +1,17 @@
+# Custom Conan settings merged into the built-in model via `conan config install`.
+#
+# `compiler.sanitizer` exists so that sanitizer-instrumented dependency binaries
+# get a distinct package_id from their plain counterparts. Without it, the
+# sanitizer flags travel only through `tools.build:*` conf, which does not enter
+# package_id, so `--build=missing` would reuse uninstrumented cached binaries.
+#
+# The value only separates package_id; the actual flags are injected by
+# profiles/sanitize. `null` is the default (no sanitizer) and is omitted from
+# package_id, so non-sanitize builds are unaffected.
+compiler:
+    apple-clang:
+        sanitizer: [null, Address, Undefined, AddressUndefined]
+    clang:
+        sanitizer: [null, Address, Undefined, AddressUndefined]
+    gcc:
+        sanitizer: [null, Address, Undefined, AddressUndefined]

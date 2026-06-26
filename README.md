@@ -72,7 +72,20 @@ make sanitize
 ```
 
 This uses a dedicated sanitizer build tree under `build/sanitize` and a Conan
-sanitize profile so dependencies are rebuilt with matching instrumentation.
+sanitize profile so dependencies are rebuilt with matching instrumentation, not
+linked from their plain (uninstrumented) Debug binaries.
+
+That separation relies on a custom `compiler.sanitizer` setting defined in
+[`conan/settings_user.yml`](conan/settings_user.yml). The setting gives instrumented
+dependency binaries a distinct Conan `package_id`; the sanitizer flags themselves
+travel through the profile's `tools.build:*` conf, which does not affect `package_id`.
+Without the setting, `--build=missing` would silently reuse the uninstrumented Debug
+binaries.
+
+`make bootstrap-sanitize` installs that file into your Conan home with
+`conan config install conan` before resolving dependencies. This is a global Conan
+side effect: it adds the `compiler.sanitizer` subsetting (default `null`, omitted from
+`package_id`) and does not change non-sanitize builds.
 
 The default `make bootstrap` does not install sanitizer-instrumented dependencies. Run
 `make bootstrap-sanitize` or `make sanitize` when you need them.
@@ -157,4 +170,6 @@ CLion can use the same public presets. Run `make bootstrap` first, then in CLion
 - `src/`: application sources
 - `tests/`: unit tests
 - `conanfile.py`: Conan dependency definition
+- `conan/settings_user.yml`: custom `compiler.sanitizer` setting for instrumented dependency builds
+- `profiles/`: Conan profiles (`default`, `sanitize`)
 - `CMakePresets.json`: project-owned public presets
