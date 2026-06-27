@@ -5,7 +5,7 @@ from conan.tools.cmake import CMakeConfigDeps, CMakeToolchain, cmake_layout
 
 
 class CppBoilerplateConan(ConanFile):
-    required_conan_version = ">=2.5"
+    required_conan_version = ">=2.25"  # CMakeConfigDeps is available from 2.25
     name = "cpp-boilerplate"
     version = "0.1.0"
     package_type = "application"
@@ -42,8 +42,10 @@ class CppBoilerplateConan(ConanFile):
         self.test_requires("gtest/1.15.0")
 
     def generate(self):
-        # CMakeConfigDeps (Conan 2.x) generates CMake CONFIG find_package files under
-        # the build dir. Preferred over the legacy CMakeDeps generator.
+        # CMakeConfigDeps generates CMake CONFIG-mode find_package files under the build
+        # dir. It is experimental in Conan 2.x (it prints a warning and its behavior may
+        # change); we use it to exercise the modern generator. Switch to the stable
+        # CMakeDeps if you need a settled interface.
         deps = CMakeConfigDeps(self)
         deps.generate()
 

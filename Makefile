@@ -75,7 +75,7 @@ $(STAMP_DIR)/sanitize.stamp: conan.lock conan/settings_user.yml
 	echo "Installing Conan dependencies (sanitize)..."
 	mkdir -p $(STAMP_DIR)
 	conan config install conan
-	conan install . -pr=profiles/sanitize -s compiler.cppstd=23 --build=missing --lockfile=conan.lock
+	conan install . -pr=profiles/sanitize --build=missing --lockfile=conan.lock
 	touch $@
 
 # ---------------------------------------------------------------------------

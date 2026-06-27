@@ -8,7 +8,7 @@
 
 ## Overview
 
-A modern C++23 project template demonstrating end-to-end toolchain integration: Conan 2.5+
+A modern C++23 project template demonstrating end-to-end toolchain integration: Conan 2.25+
 dependency management, CMake presets, testing, sanitizers, coverage, CI, and IDE setup.
 
 This repository uses:
@@ -23,13 +23,13 @@ wrapper around `make bootstrap` plus the public CMake presets.
 
 ## Prerequisites
 
-- CMake 3.28+
-- Conan 2.5+
-- Ninja or GNU Make on Unix-like systems
+- [CMake](https://cmake.org/download/) 3.28+
+- [Conan](https://docs.conan.io/2/installation.html) 2.25+ (for the `CMakeConfigDeps` generator)
+- [Ninja](https://ninja-build.org/) or GNU Make on Unix-like systems
 - A compiler and standard library with working C++23 support
-  - GCC 13+
-  - LLVM Clang 17+
-  - Apple Clang 17+ recommended
+  - [GCC](https://gcc.gnu.org/) 13+
+  - [LLVM Clang](https://llvm.org/) 17+
+  - [Apple Clang](https://developer.apple.com/xcode/) 17+ recommended
 
 Conan chooses the CMake generator for you:
 
