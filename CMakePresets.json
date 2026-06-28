@@ -13,34 +13,25 @@
       "name": "debug",
       "displayName": "Debug",
       "description": "Debug configuration backed by Conan's debug preset.",
-      "inherits": "conan-debug",
-      "binaryDir": "${sourceDir}/build/debug",
-      "toolchainFile": "${sourceDir}/build/debug/generators/conan_toolchain.cmake"
+      "inherits": "conan-debug"
     },
     {
       "name": "release",
       "displayName": "Release",
       "description": "Release configuration backed by Conan's release preset.",
-      "inherits": "conan-release",
-      "binaryDir": "${sourceDir}/build/release",
-      "toolchainFile": "${sourceDir}/build/release/generators/conan_toolchain.cmake"
+      "inherits": "conan-release"
     },
     {
       "name": "sanitize",
       "displayName": "Sanitizers",
-      "description": "Debug configuration with sanitizer instrumentation enabled.",
-      "inherits": "conan-sanitize-debug",
-      "binaryDir": "${sourceDir}/build/sanitize",
-      "toolchainFile": "${sourceDir}/build/sanitize/generators/conan_toolchain.cmake",
-      "cacheVariables": {
-        "ENABLE_SANITIZERS": "ON"
-      }
+      "description": "Debug configuration with sanitizer instrumentation from the Conan sanitize profile.",
+      "inherits": "conan-debug-addressundefined"
     },
     {
       "name": "coverage",
       "displayName": "Coverage",
-      "description": "Debug configuration with coverage instrumentation enabled.",
-      "inherits": "conan-debug",
+      "description": "Debug configuration with coverage instrumentation enabled. Reuses the debug toolchain.",
+      "inherits": "debug",
       "binaryDir": "${sourceDir}/build/coverage",
       "toolchainFile": "${sourceDir}/build/debug/generators/conan_toolchain.cmake",
       "cacheVariables": {

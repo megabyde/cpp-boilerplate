@@ -24,19 +24,14 @@ class CppBoilerplateConan(ConanFile):
         return "Ninja" if shutil.which("ninja") else "Unix Makefiles"
 
     def layout(self):
-        # The sanitize build shares Debug settings and is distinguished only by the
-        # compiler.sanitizer setting (see conan/settings_user.yml).
-        sanitize = bool(self.settings.get_safe("compiler.sanitizer"))
-        if sanitize:
-            # Names the generated Conan preset conan-sanitize-debug, which the
-            # checked-in CMakePresets sanitize preset inherits.
-            self.folders.build_folder_vars = ["const.sanitize"]
-        cmake_layout(self, generator=self._cmake_generator(), build_folder="build")
-        # Flatten the generator output into build/<preset> so the paths line up with
-        # the checked-in CMakePresets binaryDir/toolchainFile.
-        folder = "build/sanitize" if sanitize else f"build/{str(self.settings.build_type).lower()}"
-        self.folders.build = folder
-        self.folders.generators = f"{folder}/generators"
+        # Let Conan own the build layout. build_type gives build/debug and build/release;
+        # compiler.sanitizer (see conan/settings_user.yml) splits the instrumented build
+        # into build/debug-addressundefined with its own conan-debug-addressundefined
+        # preset. An unset or undefined sanitizer is omitted, so plain Debug builds (and
+        # clones without settings_user.yml) are unaffected. Coverage is not a Conan
+        # dimension; its CMake preset reuses the debug toolchain.
+        self.folders.build_folder_vars = ["settings.build_type", "settings.compiler.sanitizer"]
+        cmake_layout(self, generator=self._cmake_generator())
 
     def build_requirements(self):
         self.test_requires("gtest/1.15.0")

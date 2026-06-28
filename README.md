@@ -71,9 +71,10 @@ the one-time per-clone step that materializes it.
 make sanitize
 ```
 
-This uses a dedicated sanitizer build tree under `build/sanitize` and a Conan
-sanitize profile so dependencies are rebuilt with matching instrumentation, not
-linked from their plain (uninstrumented) Debug binaries.
+This uses a dedicated sanitizer build tree (Conan names it `build/debug-addressundefined`
+after the build type and `compiler.sanitizer` setting) and a Conan sanitize profile so
+dependencies are rebuilt with matching instrumentation, not linked from their plain
+(uninstrumented) Debug binaries.
 
 That separation relies on a custom `compiler.sanitizer` setting defined in
 [`conan/settings_user.yml`](conan/settings_user.yml). The setting gives instrumented
@@ -89,6 +90,13 @@ side effect: it adds the `compiler.sanitizer` subsetting (default `null`, omitte
 
 The default `make bootstrap` does not install sanitizer-instrumented dependencies. Run
 `make bootstrap-sanitize` or `make sanitize` when you need them.
+
+First-party targets are instrumented by the same Conan toolchain (the profile's
+`tools.build:*` flags reach the consumer), so the `sanitize` preset does not also set
+the CMake `ENABLE_SANITIZERS` option, which would double the flags. `ENABLE_SANITIZERS`
+remains a standalone option for instrumenting first-party code without the Conan
+profile, e.g. `cmake --preset debug -DENABLE_SANITIZERS=ON` (dependencies stay
+uninstrumented in that mode).
 
 > [!NOTE]
 > Conan owns the dependency graph, generator, toolchain, and ABI settings. If you switch the Conan
