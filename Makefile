@@ -31,9 +31,10 @@ endif
 
 # ---------------------------------------------------------------------------
 # Conan configuration — release gets its own profile state, coverage reuses the
-# debug toolchain, and sanitize uses a dedicated Conan profile plus a custom
-# compiler.sanitizer setting (conan/settings_user.yml) so instrumented dependency
-# binaries get a distinct package_id and are rebuilt rather than reused from cache.
+# debug toolchain (its dependency graph is identical to Debug), and sanitize uses
+# a dedicated profile plus a custom compiler.sanitizer setting (conan/settings_user.yml)
+# so instrumented dependency binaries get a distinct package_id and are rebuilt
+# rather than reused from cache.
 # ---------------------------------------------------------------------------
 CONAN_PROFILE ?= profiles/default
 CONAN_STAMP_debug := debug
