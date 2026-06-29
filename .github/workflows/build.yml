@@ -25,7 +25,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        preset: [release, sanitize, coverage]
+        preset: [release, sanitize]
         compiler: [gcc, clang]
         exclude:
           - os: macos-latest
@@ -43,16 +43,33 @@ jobs:
         run: |
           conan lock create . -pr=profiles/default --lockfile-out=/tmp/fresh.lock
           diff conan.lock /tmp/fresh.lock
-      - if: matrix.preset == 'coverage'
-        run: python3 -m pip install --break-system-packages --user gcovr
       - run: make bootstrap
       - if: matrix.preset == 'sanitize'
         run: make bootstrap-sanitize
       - run: make ${{ matrix.preset }}
-      - if: matrix.preset == 'coverage'
-        uses: actions/upload-artifact@v4
+
+  coverage:
+    name: coverage / ubuntu-latest / gcc
+    runs-on: ubuntu-latest
+    env:
+      CC: gcc
+      CXX: g++
+      CMAKE_ARGS: -DWARNINGS_AS_ERRORS=ON
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
         with:
-          name: coverage-${{ matrix.os }}-${{ matrix.compiler }}
+          path: ~/.conan2
+          key: conan-ubuntu-latest-gcc-${{ hashFiles('conanfile.py', 'conan.lock') }}
+          restore-keys: conan-ubuntu-latest-gcc-
+      - uses: conan-io/setup-conan@v1
+      - run: python3 -m pip install --break-system-packages --user gcovr
+      - run: make bootstrap
+      # Builds, runs the suite, and fails if line coverage drops below the floor.
+      - run: make coverage-report
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
           path: build/coverage/coverage-report/
 
   lint:

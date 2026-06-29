@@ -47,6 +47,7 @@ CONAN_STAMP_coverage := debug
 # ---------------------------------------------------------------------------
 STAMP_DIR := build/.stamps
 COVERAGE_DIR := build/coverage
+COVERAGE_FAIL_UNDER ?= 70
 FORMAT_SOURCES = $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
 TIDY_SOURCES = $(shell find src tests -type f -name '*.cpp')
 
@@ -131,6 +132,7 @@ coverage-report: coverage ## Generate gcovr coverage report after running covera
 		--html-details $(COVERAGE_DIR)/coverage-report/index.html \
 		--cobertura $(COVERAGE_DIR)/coverage.xml \
 		--txt-summary \
+		--fail-under-line $(COVERAGE_FAIL_UNDER) \
 		$(COVERAGE_DIR)
 
 # ---------------------------------------------------------------------------
