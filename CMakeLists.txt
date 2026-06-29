@@ -84,4 +84,10 @@ if(BUILD_TESTING)
     enable_sanitizers(split_test)
     enable_coverage(split_test)
     gtest_discover_tests(split_test DISCOVERY_MODE PRE_TEST)
+
+    # Smoke test: the application binary runs to completion and exits cleanly.
+    # Complements the unit tests by exercising src/main.cpp, including under the
+    # sanitizer and coverage presets.
+    add_test(NAME AppTest.RunsToCompletion COMMAND cpp_boilerplate)
+    set_tests_properties(AppTest.RunsToCompletion PROPERTIES PASS_REGULAR_EXPRESSION "done")
 endif()
