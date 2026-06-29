@@ -137,16 +137,24 @@ make lint
 
 ## Coverage
 
-Generate a gcovr Cobertura report and HTML report with:
+Build, test, and generate an HTML coverage report with an enforced line floor:
 
 ```console
-make coverage
+make coverage-report
 ```
 
-This writes:
+Coverage supports both compilers and selects the matching toolchain automatically
+from the build artifacts:
 
-- `build/coverage/coverage.xml`
-- `build/coverage/coverage-report/index.html`
+- **Clang / AppleClang**: source-based instrumentation reported by `llvm-cov`.
+  Writes `coverage-report/index.html` and `coverage.lcov` under `build/coverage/`.
+- **GCC**: `gcov` instrumentation reported by `gcovr` (`pip install gcovr`). Writes
+  `coverage-report/index.html` and `coverage.xml` under `build/coverage/`.
+
+The report fails if line coverage falls below `COVERAGE_FAIL_UNDER` (default 74;
+override with `make coverage-report COVERAGE_FAIL_UNDER=80`). `gcov` and `llvm-cov`
+count lines differently (gcov reports lower), so the floor tracks the gcov figure
+so both paths pass.
 
 ## IDE setup
 
