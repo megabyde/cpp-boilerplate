@@ -5,21 +5,24 @@ CMAKE_ARGS ?=
 COLOR_CYAN := \033[36m
 COLOR_RESET := \033[0m
 
-GCOV_EXECUTABLE_Linux := gcov
-GCOV_EXECUTABLE_Darwin := xcrun llvm-cov gcov
-
+# Coverage uses two toolchains: Clang builds emit source-based profiles read by
+# llvm-cov; GCC builds emit gcov data read by gcovr. coverage-report auto-selects
+# based on which artifacts the build produced.
 ifeq ($(UNAME_S),Darwin)
 HOMEBREW_LLVM_PREFIX := $(shell brew --prefix llvm 2>/dev/null)
 ifneq ($(HOMEBREW_LLVM_PREFIX),)
 export PATH := $(HOMEBREW_LLVM_PREFIX)/bin:$(PATH)
 endif
+# xcrun resolves the LLVM tools from the active Xcode toolchain, matching the
+# AppleClang that produced the .profraw files.
+LLVM_PROFDATA ?= xcrun llvm-profdata
+LLVM_COV ?= xcrun llvm-cov
+else
+LLVM_PROFDATA ?= llvm-profdata
+LLVM_COV ?= llvm-cov
 endif
 
-GCOV_EXECUTABLE ?= $(GCOV_EXECUTABLE_$(UNAME_S))
-
-ifeq ($(GCOV_EXECUTABLE),)
-$(error unsupported host OS '$(UNAME_S)'; set GCOV_EXECUTABLE='<cmd>' to override)
-endif
+GCOV_EXECUTABLE ?= gcov
 
 .DEFAULT_GOAL := help
 
@@ -47,7 +50,15 @@ CONAN_STAMP_coverage := debug
 # ---------------------------------------------------------------------------
 STAMP_DIR := build/.stamps
 COVERAGE_DIR := build/coverage
-COVERAGE_FAIL_UNDER ?= 70
+# Floor is shared by both report paths. gcov and llvm-cov count lines differently
+# (gcov 74.1%, llvm-cov 86.1% for the same code on CI), so it tracks the lower
+# gcov figure: 74 is the tightest integer the gcov path clears (75 would fail).
+COVERAGE_FAIL_UNDER ?= 74
+COVERAGE_PROFRAW := $(COVERAGE_DIR)/profraw
+COVERAGE_PROFDATA := $(COVERAGE_DIR)/coverage.profdata
+# Report merged coverage for both binaries, restricted to first-party sources.
+COVERAGE_OBJECTS := $(COVERAGE_DIR)/cpp_boilerplate -object $(COVERAGE_DIR)/split_test
+COVERAGE_SOURCES := $(CURDIR)/src $(CURDIR)/include
 FORMAT_SOURCES = $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
 TIDY_SOURCES = $(shell find src tests -type f -name '*.cpp')
 
@@ -119,20 +130,40 @@ debug release sanitize coverage: %: $(STAMP_DIR)/$$(CONAN_STAMP_%).stamp
 # ---------------------------------------------------------------------------
 .PHONY: coverage-data-clean
 coverage-data-clean:
-	-find $(COVERAGE_DIR) -name '*.gcda' -delete
+	-rm -rf $(COVERAGE_PROFRAW) $(COVERAGE_PROFDATA) $(COVERAGE_DIR)/default.profraw
+	-find $(COVERAGE_DIR) -name '*.gcda' -delete 2>/dev/null
 
-.PHONY: coverage-report
-coverage-report: coverage ## Generate gcovr coverage report after running coverage
+.PHONY: coverage-report coverage-report-llvm coverage-report-gcov
+coverage-report: coverage ## Generate an HTML coverage report and enforce the line floor
 	$(call require-tool,python3)
+	@if ls $(COVERAGE_PROFRAW)/*.profraw >/dev/null 2>&1; then \
+		$(MAKE) --no-print-directory coverage-report-llvm; \
+	else \
+		$(MAKE) --no-print-directory coverage-report-gcov; \
+	fi
+
+# Clang source-based coverage via llvm-cov (HTML + lcov + line floor).
+coverage-report-llvm:
+	$(LLVM_PROFDATA) merge -sparse $(COVERAGE_PROFRAW)/*.profraw -o $(COVERAGE_PROFDATA)
+	$(LLVM_COV) show $(COVERAGE_OBJECTS) -instr-profile=$(COVERAGE_PROFDATA) \
+		-format=html -output-dir=$(COVERAGE_DIR)/coverage-report $(COVERAGE_SOURCES)
+	$(LLVM_COV) export -format=lcov $(COVERAGE_OBJECTS) -instr-profile=$(COVERAGE_PROFDATA) \
+		$(COVERAGE_SOURCES) > $(COVERAGE_DIR)/coverage.lcov
+	$(LLVM_COV) report $(COVERAGE_OBJECTS) -instr-profile=$(COVERAGE_PROFDATA) $(COVERAGE_SOURCES)
+	$(LLVM_COV) export -summary-only $(COVERAGE_OBJECTS) -instr-profile=$(COVERAGE_PROFDATA) \
+		$(COVERAGE_SOURCES) | python3 -c 'import json, sys; \
+		pct = json.load(sys.stdin)["data"][0]["totals"]["lines"]["percent"]; floor = float(sys.argv[1]); \
+		print("line coverage %.1f%% (floor %s%%)" % (pct, sys.argv[1])); \
+		sys.exit(0 if pct >= floor else 1)' $(COVERAGE_FAIL_UNDER)
+
+# GCC gcov coverage via gcovr (HTML + Cobertura + line floor).
+coverage-report-gcov:
 	mkdir -p $(COVERAGE_DIR)/coverage-report
-	python3 -m gcovr --root . \
-		--gcov-executable "$(GCOV_EXECUTABLE)" \
-		--filter 'include/' --filter 'src/' \
-		--exclude 'tests/' \
+	python3 -m gcovr --root . --gcov-executable "$(GCOV_EXECUTABLE)" \
+		--filter 'include/' --filter 'src/' --exclude 'tests/' \
 		--html-details $(COVERAGE_DIR)/coverage-report/index.html \
 		--cobertura $(COVERAGE_DIR)/coverage.xml \
-		--txt-summary \
-		--fail-under-line $(COVERAGE_FAIL_UNDER) \
+		--txt-summary --fail-under-line $(COVERAGE_FAIL_UNDER) \
 		$(COVERAGE_DIR)
 
 # ---------------------------------------------------------------------------
