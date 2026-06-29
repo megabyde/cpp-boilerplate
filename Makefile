@@ -1,7 +1,5 @@
 UNAME_S := $(shell uname -s)
 
-CMAKE_ARGS ?=
-
 COLOR_CYAN := \033[36m
 COLOR_RESET := \033[0m
 
@@ -110,9 +108,7 @@ sanitize: ## Build and test via the sanitize workflow preset
 coverage: coverage-data-clean ## Build and test via the coverage workflow preset
 
 debug release sanitize coverage: %: $(STAMP_DIR)/$$(CONAN_STAMP_%).stamp
-	cmake --preset $@ $(CMAKE_ARGS)
-	cmake --build --preset $@
-	ctest --preset $@
+	cmake --workflow --preset $@
 
 # ---------------------------------------------------------------------------
 # Coverage report generation
@@ -141,7 +137,7 @@ coverage-report: coverage ## Generate gcovr coverage report after running covera
 .PHONY: lint
 lint: $(STAMP_DIR)/debug.stamp ## Run clang-tidy against the debug compilation database
 	$(call require-tool,clang-tidy)
-	cmake --preset debug $(CMAKE_ARGS)
+	cmake --preset debug
 	PATH="$(PATH)" clang-tidy -p build/debug $(TIDY_SOURCES)
 
 .PHONY: format

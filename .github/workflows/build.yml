@@ -20,7 +20,7 @@ jobs:
     env:
       CC: ${{ matrix.compiler == 'gcc' && 'gcc' || 'clang' }}
       CXX: ${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
-      CMAKE_ARGS: -DWARNINGS_AS_ERRORS=ON
+      WARNINGS_AS_ERRORS: ON
     strategy:
       fail-fast: false
       matrix:
@@ -48,13 +48,38 @@ jobs:
         run: make bootstrap-sanitize
       - run: make ${{ matrix.preset }}
 
+  # Windows has no make; it drives Conan and the CMake presets directly, using the
+  # MSVC environment Conan generates (conanbuild.bat) rather than a third-party
+  # action. The sanitize and coverage presets are Unix-only, so Windows covers release.
+  windows:
+    name: release / windows-latest / msvc
+    runs-on: windows-latest
+    env:
+      WARNINGS_AS_ERRORS: ON
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.conan2
+          key: conan-windows-latest-msvc-${{ hashFiles('conanfile.py', 'conan.lock') }}
+          restore-keys: conan-windows-latest-msvc-
+      - uses: conan-io/setup-conan@v1
+      # Ninja must be on PATH when Conan picks the generator at install time.
+      - run: pip install ninja
+      - run: conan install . -pr=profiles/default -s build_type=Release --build=missing --lockfile=conan.lock
+      - name: Build and test (release preset)
+        shell: cmd
+        run: |
+          call build\release\generators\conanbuild.bat
+          cmake --workflow --preset release || exit /b 1
+
   coverage:
     name: coverage / ubuntu-latest / gcc
     runs-on: ubuntu-latest
     env:
       CC: gcc
       CXX: g++
-      CMAKE_ARGS: -DWARNINGS_AS_ERRORS=ON
+      WARNINGS_AS_ERRORS: ON
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
