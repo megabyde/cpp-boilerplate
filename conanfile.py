@@ -21,7 +21,12 @@ class CppBoilerplateConan(ConanFile):
     }
 
     def _cmake_generator(self):
-        return "Ninja" if shutil.which("ninja") else "Unix Makefiles"
+        if shutil.which("ninja"):
+            return "Ninja"
+        # Unix Makefiles cannot drive MSVC; fall back to the VS generator there.
+        if self.settings.os == "Windows":
+            return "Visual Studio 17 2022"
+        return "Unix Makefiles"
 
     def layout(self):
         # Let Conan own the build layout. build_type gives build/debug and build/release;

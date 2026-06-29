@@ -25,18 +25,19 @@ wrapper around `make bootstrap` plus the public CMake presets.
 
 - [CMake](https://cmake.org/download/) 3.28+
 - [Conan](https://docs.conan.io/2/installation.html) 2.25+ (for the `CMakeConfigDeps` generator)
-- [Ninja](https://ninja-build.org/) or GNU Make on Unix-like systems
+- [Ninja](https://ninja-build.org/) (required on Windows; GNU Make also works on Unix)
 - A compiler and standard library with working C++23 support
   - [GCC](https://gcc.gnu.org/) 13+
   - [LLVM Clang](https://llvm.org/) 17+
   - [Apple Clang](https://developer.apple.com/xcode/) 17+ recommended
+  - [MSVC](https://visualstudio.microsoft.com/) 2022 (17.10+) on Windows
 
 Conan chooses the CMake generator for you:
 
 - `Ninja` on Unix-like systems when it is available
 - `Unix Makefiles` on Unix-like systems when `ninja` is not installed
 
-This boilerplate currently supports macOS and Linux.
+This boilerplate supports Linux, macOS, and Windows.
 
 ## Configure, build, and test
 
@@ -58,6 +59,21 @@ make coverage
 make lint
 make format-check
 ```
+
+### Windows
+
+The `Makefile` is a Unix convenience wrapper. On Windows, drive Conan and the CMake
+presets directly from a shell with the MSVC environment loaded (a Developer
+PowerShell, or any shell after `vcvarsall`):
+
+```console
+conan install . -pr=profiles/default -s build_type=Release --build=missing --lockfile=conan.lock
+cmake --workflow --preset release
+```
+
+`cmake --workflow --preset <name>` runs configure, build, and test in one step; it
+is what the `make` targets call on Unix too. The `sanitize` and `coverage` presets
+are Unix-only.
 
 ### Why CMakePresets.json includes ConanPresets.json
 
@@ -114,6 +130,7 @@ project leaves it at the default `ON`, so `make debug`, `make release`, `make sa
 - Configure presets: `debug`, `release`, `sanitize`, `coverage`
 - Build presets: `debug`, `release`, `sanitize`, `coverage`
 - Test presets: `debug`, `release`, `sanitize`, `coverage`
+- Workflow presets: `debug`, `release`, `sanitize`, `coverage` (configure + build + test)
 
 The Conan-generated `conan-*` presets are internal implementation details and are not the public
 interface for developers or CI.

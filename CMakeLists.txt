@@ -29,8 +29,13 @@ endif()
 find_package(spdlog CONFIG REQUIRED)
 
 function(enable_project_warnings target)
-    target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /W4)
+    else()
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
     if(WARNINGS_AS_ERRORS)
+        # Adds /WX for MSVC and -Werror for GCC/Clang.
         set_target_properties(${target} PROPERTIES COMPILE_WARNING_AS_ERROR ON)
     endif()
 endfunction()
@@ -40,15 +45,18 @@ function(enable_sanitizers target)
         return()
     endif()
 
-    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
-        message(FATAL_ERROR "Sanitizers require GCC, Clang, or AppleClang")
+    if(MSVC)
+        # MSVC ships AddressSanitizer; UndefinedBehaviorSanitizer is not available.
+        target_compile_options(${target} PRIVATE /fsanitize=address)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+        target_compile_options(
+            ${target} PRIVATE -fsanitize=address,undefined -fno-sanitize-recover=all
+                              -fno-omit-frame-pointer
+        )
+        target_link_options(${target} PRIVATE -fsanitize=address,undefined)
+    else()
+        message(FATAL_ERROR "Sanitizers require MSVC, GCC, Clang, or AppleClang")
     endif()
-
-    target_compile_options(
-        ${target} PRIVATE -fsanitize=address,undefined -fno-sanitize-recover=all
-                          -fno-omit-frame-pointer
-    )
-    target_link_options(${target} PRIVATE -fsanitize=address,undefined)
 endfunction()
 
 function(enable_coverage target)
