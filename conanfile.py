@@ -12,7 +12,7 @@ class CppBoilerplateConan(ConanFile):
 
     settings = "os", "compiler", "build_type", "arch"
 
-    requires = "spdlog/1.15.3"
+    requires = "spdlog/1.17.0"
 
     default_options = {
         "spdlog/*:header_only": False,
@@ -39,7 +39,7 @@ class CppBoilerplateConan(ConanFile):
         cmake_layout(self, generator=self._cmake_generator())
 
     def build_requirements(self):
-        self.test_requires("gtest/1.15.0")
+        self.test_requires("gtest/1.17.0")
 
     def generate(self):
         # CMakeConfigDeps generates CMake CONFIG-mode find_package files under the build
