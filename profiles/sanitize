@@ -1,4 +1,4 @@
-include(default)
+include(./default)
 
 [settings]
 build_type=Debug
