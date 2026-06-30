@@ -1,6 +1,7 @@
 import shutil
 
 from conan import ConanFile
+from conan.tools.build import check_min_cppstd
 from conan.tools.cmake import CMakeConfigDeps, CMakeToolchain, cmake_layout
 
 
@@ -12,13 +13,28 @@ class CppBoilerplateConan(ConanFile):
 
     settings = "os", "compiler", "build_type", "arch"
 
-    requires = "spdlog/1.17.0"
+    options = {"with_tests": [True, False]}
 
     default_options = {
+        "with_tests": True,
         "spdlog/*:header_only": False,
         "spdlog/*:shared": False,
         "spdlog/*:use_std_fmt": False,  # use bundled fmt to exercise the dep graph
     }
+
+    def requirements(self):
+        # The method form (over the `requires` attribute) is what lets requirements be
+        # conditional, e.g. platform-specific extras:
+        #   if self.settings.os == "Windows":
+        #       self.requires("...")
+        self.requires("spdlog/1.17.0")
+
+    def validate(self):
+        # Require C++23 at the standard level (catches a profile pinning an older
+        # compiler.cppstd). An actually-too-old compiler is rejected by CMake's
+        # cxx_std_23 feature requirement at configure time, so we deliberately do not
+        # duplicate a compiler-version table here; the README documents the minimums.
+        check_min_cppstd(self, 23)
 
     def _cmake_generator(self):
         if shutil.which("ninja"):
@@ -39,7 +55,8 @@ class CppBoilerplateConan(ConanFile):
         cmake_layout(self, generator=self._cmake_generator())
 
     def build_requirements(self):
-        self.test_requires("gtest/1.17.0")
+        if self.options.with_tests:
+            self.test_requires("gtest/1.17.0")
 
     def generate(self):
         # CMakeConfigDeps generates CMake CONFIG-mode find_package files under the build
@@ -51,4 +68,7 @@ class CppBoilerplateConan(ConanFile):
 
         tc = CMakeToolchain(self, generator=self._cmake_generator())
         tc.user_presets_path = "ConanPresets.json"
+        # Flow the Conan option into CMake: with tests disabled, BUILD_TESTING (from
+        # include(CTest)) is off and find_package(GTest) is never reached.
+        tc.cache_variables["BUILD_TESTING"] = bool(self.options.with_tests)
         tc.generate()
