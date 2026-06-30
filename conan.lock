@@ -1,11 +1,13 @@
 {
     "version": "0.5",
     "requires": [
-        "spdlog/1.15.3#855569172102c04e3e0db21ae95cf017%1767604739.328",
-        "gtest/1.15.0#9eba70e54373fb7325151ad3375934a1%1743410805.366",
-        "fmt/11.2.0#579bb2cdf4a7607621beea4eb4651e0f%1746298708.362"
+        "spdlog/1.17.0#bcbaaf7147bda6ad24ffbd1ac3d7142c%1767636069.964",
+        "gtest/1.17.0#5224b3b3ff3b4ce1133cbdd27d53ee7d%1755784855.585",
+        "fmt/12.1.0#50abab23274d56bb8f42c94b3b9a40c7%1761885265.231"
     ],
-    "build_requires": [],
+    "build_requires": [
+        "cmake/4.3.3#840cf00ea09777e05c2050a50a82c722%1781521538.233"
+    ],
     "python_requires": [],
     "config_requires": []
 }
