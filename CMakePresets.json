@@ -30,9 +30,21 @@
     },
     {
       "name": "sanitize",
-      "displayName": "Sanitizers",
-      "description": "Debug configuration with sanitizer instrumentation from the Conan sanitize profile.",
-      "inherits": ["conan-debug-addressundefined", "_warnings"]
+      "displayName": "Sanitizers (ASan + UBSan)",
+      "description": "Debug configuration with combined ASan+UBSan instrumentation from the Conan sanitize profile.",
+      "inherits": ["conan-debug-addressundefinedbehavior", "_warnings"]
+    },
+    {
+      "name": "sanitize-asan",
+      "displayName": "Sanitizers (ASan)",
+      "description": "Debug configuration with AddressSanitizer instrumentation from the Conan sanitize-asan profile.",
+      "inherits": ["conan-debug-address", "_warnings"]
+    },
+    {
+      "name": "sanitize-ubsan",
+      "displayName": "Sanitizers (UBSan)",
+      "description": "Debug configuration with UndefinedBehaviorSanitizer instrumentation from the Conan sanitize-ubsan profile.",
+      "inherits": ["conan-debug-undefinedbehavior", "_warnings"]
     },
     {
       "name": "coverage",
@@ -63,6 +75,16 @@
       "configuration": "Debug"
     },
     {
+      "name": "sanitize-asan",
+      "configurePreset": "sanitize-asan",
+      "configuration": "Debug"
+    },
+    {
+      "name": "sanitize-ubsan",
+      "configurePreset": "sanitize-ubsan",
+      "configuration": "Debug"
+    },
+    {
       "name": "coverage",
       "configurePreset": "coverage",
       "configuration": "Debug"
@@ -87,7 +109,26 @@
     },
     {
       "name": "sanitize",
+      "inherits": "conan-debug-addressundefinedbehavior",
       "configurePreset": "sanitize",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "sanitize-asan",
+      "inherits": "conan-debug-address",
+      "configurePreset": "sanitize-asan",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "sanitize-ubsan",
+      "inherits": "conan-debug-undefinedbehavior",
+      "configurePreset": "sanitize-ubsan",
       "configuration": "Debug",
       "output": {
         "outputOnFailure": true
@@ -125,6 +166,22 @@
         { "type": "configure", "name": "sanitize" },
         { "type": "build", "name": "sanitize" },
         { "type": "test", "name": "sanitize" }
+      ]
+    },
+    {
+      "name": "sanitize-asan",
+      "steps": [
+        { "type": "configure", "name": "sanitize-asan" },
+        { "type": "build", "name": "sanitize-asan" },
+        { "type": "test", "name": "sanitize-asan" }
+      ]
+    },
+    {
+      "name": "sanitize-ubsan",
+      "steps": [
+        { "type": "configure", "name": "sanitize-ubsan" },
+        { "type": "build", "name": "sanitize-ubsan" },
+        { "type": "test", "name": "sanitize-ubsan" }
       ]
     },
     {

@@ -47,7 +47,8 @@ class CppBoilerplateConan(ConanFile):
     def layout(self):
         # Let Conan own the build layout. build_type gives build/debug and build/release;
         # compiler.sanitizer (see conan/settings_user.yml) splits the instrumented build
-        # into build/debug-addressundefined with its own conan-debug-addressundefined
+        # into build/debug-addressundefinedbehavior with its own
+        # conan-debug-addressundefinedbehavior
         # preset. An unset or undefined sanitizer is omitted, so plain Debug builds (and
         # clones without settings_user.yml) are unaffected. Coverage is not a Conan
         # dimension; its CMake preset reuses the debug toolchain.
