@@ -187,7 +187,21 @@ format-check: ## Fail if C++ sources are not clang-format clean
 # Lock and clean
 # ---------------------------------------------------------------------------
 .PHONY: lock
-lock: conan.lock ## Ensure conan.lock is up to date
+lock: ## Force-regenerate conan.lock from conanfile.py
+	echo "Regenerating conan.lock..."
+	conan lock create . -pr=$(CONAN_PROFILE) --lockfile-out=conan.lock
+
+.PHONY: lock-check
+lock-check: ## Fail if conan.lock is out of date with conanfile.py (used by CI)
+	tmp=$$(mktemp); \
+	conan lock create . -pr=$(CONAN_PROFILE) --lockfile-out=$$tmp >/dev/null 2>&1 \
+		|| { echo "ERROR: conan lock create failed"; rm -f $$tmp; exit 1; }; \
+	if diff conan.lock $$tmp >/dev/null; then \
+		rm -f $$tmp; echo "conan.lock is up to date"; \
+	else \
+		echo "ERROR: conan.lock is stale; run 'make lock' and commit the result"; \
+		diff conan.lock $$tmp || true; rm -f $$tmp; exit 1; \
+	fi
 
 .PHONY: clean
 clean: ## Remove generated build artifacts and Conan preset files
