@@ -203,6 +203,23 @@ override with `make coverage-report COVERAGE_FAIL_UNDER=80`). `gcov` and `llvm-c
 count lines differently (gcov reports lower), so the floor tracks the gcov figure
 so both paths pass.
 
+## Install
+
+`cmake --install` installs the application binary to `<prefix>/bin`. Only the executable is
+installed; the static library is an internal build artifact and is deliberately not installed
+or exported.
+
+```console
+$ cmake --workflow --preset release
+$ cmake --install build/release --prefix /path/to/prefix
+$ /path/to/prefix/bin/cpp_boilerplate
+[2026-06-30 20:46:16.431] [info] cpp-boilerplate 0.1.0 starting
+[2026-06-30 20:46:16.431] [info] field 0: alpha
+[2026-06-30 20:46:16.431] [info] field 1: beta
+[2026-06-30 20:46:16.431] [info] field 2: gamma
+[2026-06-30 20:46:16.431] [info] done
+```
+
 ## IDE setup
 
 ### VS Code

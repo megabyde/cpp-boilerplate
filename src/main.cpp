@@ -1,4 +1,5 @@
 #include <cpp_boilerplate/split.hpp>
+#include <cpp_boilerplate/version.hpp>
 
 #include <spdlog/spdlog.h>
 
@@ -11,7 +12,7 @@ namespace {
 void run()
 {
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
-    spdlog::info("cpp-boilerplate starting");
+    spdlog::info("cpp-boilerplate {} starting", cpp_boilerplate::version);
 
     constexpr std::string_view record = "alpha,beta,gamma";
     std::size_t index = 0;

@@ -1,14 +1,16 @@
+import os
+import re
 import shutil
 
 from conan import ConanFile
 from conan.tools.build import check_min_cppstd
 from conan.tools.cmake import CMakeConfigDeps, CMakeToolchain, cmake_layout
+from conan.tools.files import load
 
 
 class CppBoilerplateConan(ConanFile):
     required_conan_version = ">=2.25"  # CMakeConfigDeps is available from 2.25
     name = "cpp-boilerplate"
-    version = "0.1.0"
     package_type = "application"
 
     settings = "os", "compiler", "build_type", "arch"
@@ -21,6 +23,12 @@ class CppBoilerplateConan(ConanFile):
         "spdlog/*:shared": False,
         "spdlog/*:use_std_fmt": False,  # use bundled fmt to exercise the dep graph
     }
+
+    def set_version(self):
+        # Single source of truth: parse the version from the CMake project() call so the
+        # Conan and CMake versions cannot drift. CMakeLists.txt owns it.
+        cmakelists = load(self, os.path.join(self.recipe_folder, "CMakeLists.txt"))
+        self.version = re.search(r"project\([^)]*VERSION\s+([\d.]+)", cmakelists).group(1)
 
     def requirements(self):
         # The method form (over the `requires` attribute) is what lets requirements be
