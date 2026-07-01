@@ -47,6 +47,12 @@ jobs:
       - if: matrix.preset == 'sanitize'
         run: make bootstrap-sanitize
       - run: make ${{ matrix.preset }}
+      # Install the application to a throwaway prefix and run it, verifying the install() rule.
+      - name: Verify install (release)
+        if: matrix.preset == 'release'
+        run: |
+          cmake --install build/release --prefix "$RUNNER_TEMP/install"
+          "$RUNNER_TEMP/install/bin/cpp_boilerplate"
 
   # Windows has no make; it drives Conan and the CMake presets directly, using the
   # MSVC environment Conan generates (conanbuild.bat) rather than a third-party
@@ -72,6 +78,11 @@ jobs:
         run: |
           call build\release\generators\conanbuild.bat
           cmake --workflow --preset release || exit /b 1
+      - name: Verify install (release)
+        shell: cmd
+        run: |
+          cmake --install build\release --prefix "%RUNNER_TEMP%\install" || exit /b 1
+          "%RUNNER_TEMP%\install\bin\cpp_boilerplate.exe" || exit /b 1
 
   coverage:
     name: coverage / ubuntu-latest / gcc

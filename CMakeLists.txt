@@ -95,9 +95,22 @@ target_compile_features(cpp_boilerplate_lib PUBLIC cxx_std_23)
 enable_project_options(cpp_boilerplate_lib)
 
 # --- application -----------------------------------------------------------
+# Generate a version header from the project() version (the single source of truth; the Conan
+# recipe reads the same value) and expose it to the application only.
+configure_file(
+    ${PROJECT_SOURCE_DIR}/cmake/version.hpp.in
+    ${PROJECT_BINARY_DIR}/generated/cpp_boilerplate/version.hpp @ONLY
+)
+
 add_executable(cpp_boilerplate src/main.cpp)
+target_include_directories(cpp_boilerplate PRIVATE ${PROJECT_BINARY_DIR}/generated)
 target_link_libraries(cpp_boilerplate PRIVATE cpp_boilerplate_lib spdlog::spdlog)
 enable_project_options(cpp_boilerplate)
+
+# Install only the application binary. The static library is an internal build artifact,
+# not a public deliverable, so it is deliberately not installed or exported.
+include(GNUInstallDirs)
+install(TARGETS cpp_boilerplate RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # --- tests -----------------------------------------------------------------
 if(BUILD_TESTING)
