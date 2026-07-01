@@ -82,10 +82,10 @@ $(STAMP_DIR)/debug.stamp $(STAMP_DIR)/release.stamp: conan.lock
 	conan install . -pr=$(CONAN_PROFILE) -s build_type=$(BUILD_TYPE) --build=missing --lockfile=conan.lock
 	touch $@
 
-$(STAMP_DIR)/sanitize.stamp: conan.lock conan/settings_user.yml
+$(STAMP_DIR)/sanitize.stamp: conan.lock conan/settings_user.yml profiles/sanitize profiles/sanitize-common
 	echo "Installing Conan dependencies (sanitize)..."
 	mkdir -p $(STAMP_DIR)
-	conan config install conan
+	conan config install conan/
 	conan install . -pr=profiles/sanitize --build=missing --lockfile=conan.lock
 	touch $@
 

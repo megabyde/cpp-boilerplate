@@ -1,14 +1,12 @@
-include(./default)
+# Combined ASan + UBSan; the mode driven by `make sanitize` and CI. Inherits the shared base
+# and appends both instrumentations.
+include(./sanitize-common)
 
 [settings]
-build_type=Debug
-# Distinct package_id for instrumented dependency binaries. The flags below do the
-# actual instrumentation; this setting only keeps them from sharing a plain-Debug
-# package_id. Requires conan/settings_user.yml (installed by `make bootstrap-sanitize`).
-compiler.sanitizer=AddressUndefined
+compiler.sanitizer=AddressUndefinedBehavior
 
 [conf]
-tools.build:cflags=["-fsanitize=address,undefined", "-fno-omit-frame-pointer", "-fno-sanitize-recover=all"]
-tools.build:cxxflags=["-fsanitize=address,undefined", "-fno-omit-frame-pointer", "-fno-sanitize-recover=all"]
+tools.build:cflags+=["-fsanitize=address,undefined"]
+tools.build:cxxflags+=["-fsanitize=address,undefined"]
 tools.build:sharedlinkflags=["-fsanitize=address,undefined"]
 tools.build:exelinkflags=["-fsanitize=address,undefined"]

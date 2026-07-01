@@ -87,10 +87,39 @@ the one-time per-clone step that materializes it.
 make sanitize
 ```
 
-This uses a dedicated sanitizer build tree (Conan names it `build/debug-addressundefined`
+This uses a dedicated sanitizer build tree (Conan names it `build/debug-addressundefinedbehavior`
 after the build type and `compiler.sanitizer` setting) and a Conan sanitize profile so
 dependencies are rebuilt with matching instrumentation, not linked from their plain
 (uninstrumented) Debug binaries.
+
+Three modes are provided, showcasing Conan profile inheritance. Each mode profile inherits a
+shared base, [`profiles/sanitize-common`](profiles/sanitize-common) (which pulls in
+`profiles/default`, sets `Debug`, and carries the common instrumentation flags and `[runenv]`),
+and appends its own `-fsanitize` flags:
+
+- `sanitize` — combined ASan + UBSan ([`profiles/sanitize`](profiles/sanitize)); driven by
+  `make sanitize` and CI.
+- `sanitize-asan` — AddressSanitizer only ([`profiles/sanitize-asan`](profiles/sanitize-asan)).
+- `sanitize-ubsan` — UndefinedBehaviorSanitizer only
+  ([`profiles/sanitize-ubsan`](profiles/sanitize-ubsan)).
+
+`make sanitize` runs the combined mode. The single-mode presets are runnable directly once
+their instrumented dependencies are installed (all three share `conan.lock`):
+
+```console
+conan config install conan/  # once; installs conan/settings_user.yml, i.e. the compiler.sanitizer setting (bootstrap-sanitize does this too)
+conan install . -pr=profiles/sanitize-asan --build=missing --lockfile=conan.lock
+cmake --workflow --preset sanitize-asan
+```
+
+Each mode gets its own `package_id` and build tree (`build/debug-address`,
+`build/debug-undefinedbehavior`, `build/debug-addressundefinedbehavior`).
+
+ASan/UBSan runtime options (`halt_on_error`, `print_stacktrace`, and related checks) live in
+`profiles/sanitize-common` under `[runenv]` (inherited by every mode). Conan injects them into
+the generated per-mode test preset, which the public `sanitize*` test preset inherits, so
+`ctest`/`cmake --workflow` runs the instrumented tests with those options — a single source of
+truth, no duplication in `CMakePresets.json`.
 
 That separation relies on a custom `compiler.sanitizer` setting defined in
 [`conan/settings_user.yml`](conan/settings_user.yml). The setting gives instrumented
@@ -100,7 +129,8 @@ Without the setting, `--build=missing` would silently reuse the uninstrumented D
 binaries.
 
 `make bootstrap-sanitize` installs that file into your Conan home with
-`conan config install conan` before resolving dependencies. This is a global Conan
+`conan config install conan/` (the repository's `conan/` directory) before resolving
+dependencies. This is a global Conan
 side effect: it adds the `compiler.sanitizer` subsetting (default `null`, omitted from
 `package_id`) and does not change non-sanitize builds.
 
@@ -127,10 +157,10 @@ project leaves it at the default `ON`, so `make debug`, `make release`, `make sa
 
 ## Public presets
 
-- Configure presets: `debug`, `release`, `sanitize`, `coverage`
-- Build presets: `debug`, `release`, `sanitize`, `coverage`
-- Test presets: `debug`, `release`, `sanitize`, `coverage`
-- Workflow presets: `debug`, `release`, `sanitize`, `coverage` (configure + build + test)
+- Configure presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`, `coverage`
+- Build presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`, `coverage`
+- Test presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`, `coverage`
+- Workflow presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`, `coverage` (configure + build + test)
 
 The Conan-generated `conan-*` presets are internal implementation details and are not the public
 interface for developers or CI.
@@ -204,5 +234,5 @@ CLion can use the same public presets. Run `make bootstrap` first, then in CLion
 - `tests/`: unit tests
 - `conanfile.py`: Conan dependency definition
 - `conan/settings_user.yml`: custom `compiler.sanitizer` setting for instrumented dependency builds
-- `profiles/`: Conan profiles (`default`, `sanitize`)
+- `profiles/`: Conan profiles (`default`; `sanitize-common` base inherited by `sanitize`, `sanitize-asan`, `sanitize-ubsan`)
 - `CMakePresets.json`: project-owned public presets
