@@ -13,6 +13,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # Pin the Conan version for reproducible CI. Bump here in one place.
+  CONAN_VERSION: "2.29.1"
+
 jobs:
   build:
     name: ${{ matrix.preset }} / ${{ matrix.os }} / ${{ matrix.compiler }}
@@ -33,16 +37,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.conan2
-          key: conan-${{ matrix.os }}-${{ matrix.compiler }}-${{ hashFiles('conanfile.py', 'conan.lock') }}
-          restore-keys: conan-${{ matrix.os }}-${{ matrix.compiler }}-
       - uses: conan-io/setup-conan@v1
-      - name: Verify conan.lock freshness
-        run: |
-          conan lock create . -pr=profiles/default --lockfile-out=/tmp/fresh.lock
-          diff conan.lock /tmp/fresh.lock
+        with:
+          version: ${{ env.CONAN_VERSION }}
+          cache_packages: true
+      - run: make lock-check
       - run: make bootstrap
       - if: matrix.preset == 'sanitize'
         run: make bootstrap-sanitize
@@ -64,12 +63,10 @@ jobs:
       WARNINGS_AS_ERRORS: ON
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.conan2
-          key: conan-windows-latest-msvc-${{ hashFiles('conanfile.py', 'conan.lock') }}
-          restore-keys: conan-windows-latest-msvc-
       - uses: conan-io/setup-conan@v1
+        with:
+          version: ${{ env.CONAN_VERSION }}
+          cache_packages: true
       # Ninja must be on PATH when Conan picks the generator at install time.
       - run: pip install ninja
       - run: conan install . -pr=profiles/default -s build_type=Release --build=missing --lockfile=conan.lock
@@ -93,12 +90,10 @@ jobs:
       WARNINGS_AS_ERRORS: ON
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.conan2
-          key: conan-ubuntu-latest-gcc-${{ hashFiles('conanfile.py', 'conan.lock') }}
-          restore-keys: conan-ubuntu-latest-gcc-
       - uses: conan-io/setup-conan@v1
+        with:
+          version: ${{ env.CONAN_VERSION }}
+          cache_packages: true
       - run: python3 -m pip install --break-system-packages --user gcovr
       - run: make bootstrap
       # Builds, runs the suite, and fails if line coverage drops below the floor.
@@ -113,6 +108,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: conan-io/setup-conan@v1
+        with:
+          version: ${{ env.CONAN_VERSION }}
+          cache_packages: true
       - run: make bootstrap
       - run: make format-check
       - run: make lint
