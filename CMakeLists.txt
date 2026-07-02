@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.28)
+# 3.25 is the floor bound by the features this template uses: workflow presets and
+# CMakePresets schema v6 (3.25), COMPILE_WARNING_AS_ERROR (3.24), cxx_std_23 (3.20).
+cmake_minimum_required(VERSION 3.25)
 
 project(
     cpp_boilerplate

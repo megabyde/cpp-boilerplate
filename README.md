@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/megabyde/cpp-boilerplate/actions/workflows/build.yml/badge.svg)](https://github.com/megabyde/cpp-boilerplate/actions/workflows/build.yml)
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)](https://en.cppreference.com/w/cpp/23)
-[![CMake](https://img.shields.io/badge/CMake-3.28%2B-064F8C.svg)](https://cmake.org)
+[![CMake](https://img.shields.io/badge/CMake-3.25%2B-064F8C.svg)](https://cmake.org)
 [![Conan](https://img.shields.io/badge/Conan-2.x-6699CB.svg)](https://conan.io)
 [![License](https://img.shields.io/badge/license-Unlicense-green.svg)](LICENSE)
 
@@ -23,7 +23,7 @@ wrapper around `make bootstrap` plus the public CMake presets.
 
 ## Prerequisites
 
-- [CMake](https://cmake.org/download/) 3.28+
+- [CMake](https://cmake.org/download/) 3.25+ (for workflow presets)
 - [Conan](https://docs.conan.io/2/installation.html) 2.25+ (for the `CMakeConfigDeps` generator)
 - [Ninja](https://ninja-build.org/) (required on Windows; GNU Make also works on Unix)
 - A compiler and standard library with working C++23 support

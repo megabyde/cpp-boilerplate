@@ -11,3 +11,12 @@ compiler.runtime=dynamic
 compiler.libcxx={{ detect_api.detect_libcxx(compiler, compiler_version, compiler_exe) }}
 {% endif %}
 build_type=Release
+
+# Satisfy the cmake build tool (declared in conanfile.py) from the system CMake instead of
+# downloading the Conan package. Everyone building this project already has CMake on PATH for
+# `cmake --workflow`, so this avoids a redundant download. The version is the project's
+# documented floor (also >= gtest's own cmake requirement), which unifies the whole build
+# graph onto one platform node. Conan does not verify the PATH cmake's version against this;
+# it trusts that whatever is on PATH satisfies the range. cmake_minimum_required enforces it.
+[platform_tool_requires]
+cmake/3.25
