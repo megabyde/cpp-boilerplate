@@ -18,8 +18,26 @@ This repository uses:
 - [spdlog](https://github.com/gabime/spdlog) via Conan as the sample compiled dependency
 - [GoogleTest](https://github.com/google/googletest) via Conan
 
-The checked-in presets are the source of truth. [`Makefile`](Makefile) is a thin convenience
-wrapper around `make bootstrap` plus the public CMake presets.
+## Operating model
+
+The build is layered, and each layer owns one thing:
+
+- **Conan** owns the dependency graph, the toolchain, the CMake generator, and the ABI-relevant
+  settings. It resolves them from [`conanfile.py`](conanfile.py) and the [`profiles/`](profiles)
+  files; [`conan.lock`](conan.lock) pins the exact graph for reproducible builds.
+- **CMake presets** ([`CMakePresets.json`](CMakePresets.json)) are the public build interface:
+  the `debug`, `release`, `sanitize*`, and `coverage` names you configure, build, and test. They
+  are checked in and are the source of truth for how the project is built.
+- Conan writes its toolchain details into a generated `ConanPresets.json` that
+  `CMakePresets.json` includes. That file is an implementation detail, not an interface;
+  `make bootstrap` is the one-time per-clone step that materializes it.
+- The [`Makefile`](Makefile) is a thin convenience wrapper: each target runs `conan install` for
+  the right profile, then `cmake --workflow --preset <name>`. On Windows you run those two
+  commands directly (see [Windows](#windows)).
+
+When you change the Conan configuration (versions, options, or profile), rerun `make bootstrap` or
+the matching `make` target and keep using the same public preset names. The preset interface is
+stable across toolchain changes.
 
 ## Prerequisites
 
@@ -74,12 +92,6 @@ cmake --workflow --preset release
 `cmake --workflow --preset <name>` runs configure, build, and test in one step; it
 is what the `make` targets call on Unix too. The `sanitize` and `coverage` presets
 are Unix-only.
-
-### Why CMakePresets.json includes ConanPresets.json
-
-The checked-in `CMakePresets.json` owns the public preset names. Conan owns toolchain details. The
-generated `ConanPresets.json` is an implementation detail, not an interface; `make bootstrap` is
-the one-time per-clone step that materializes it.
 
 ### Sanitizers (ASAN + UBSAN)
 
@@ -143,11 +155,6 @@ the CMake `ENABLE_SANITIZERS` option, which would double the flags. `ENABLE_SANI
 remains a standalone option for instrumenting first-party code without the Conan
 profile, e.g. `cmake --preset debug -DENABLE_SANITIZERS=ON` (dependencies stay
 uninstrumented in that mode).
-
-> [!NOTE]
-> Conan owns the dependency graph, generator, toolchain, and ABI settings. If you switch the Conan
-> configuration, rerun `make bootstrap` or the matching public `make` target and keep using the
-> same public CMake preset names.
 
 ### Tests
 
