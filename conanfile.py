@@ -64,6 +64,12 @@ class CppBoilerplateConan(ConanFile):
         cmake_layout(self, generator=self._cmake_generator())
 
     def build_requirements(self):
+        # Declare CMake as an explicit build tool. The range matches the project floor and is
+        # satisfied from the system CMake via [platform_tool_requires] in profiles/default (so
+        # the lock records cmake/<floor>#platform, not a downloaded package). Our own targets
+        # build via `cmake --workflow`; the generator (Ninja or Makefiles) is left to the
+        # environment, not pinned here.
+        self.tool_requires("cmake/[>=3.25]")
         if self.options.with_tests:
             self.test_requires("gtest/1.17.0")
 
