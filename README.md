@@ -44,6 +44,8 @@ stable across toolchain changes.
 - [CMake](https://cmake.org/download/) 3.25+ (for workflow presets)
 - [Conan](https://docs.conan.io/2/installation.html) 2.25+ (for the `CMakeConfigDeps` generator)
 - [Ninja](https://ninja-build.org/) (optional, Unix only; GNU Make is used when absent)
+- [ccache](https://ccache.dev/) (optional; used automatically for first-party targets when on
+  PATH — not with the Visual Studio generator, which ignores compiler launchers)
 - A compiler and standard library with working C++23 support
   - [GCC](https://gcc.gnu.org/) 13+
   - [LLVM Clang](https://llvm.org/) 17+

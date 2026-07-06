@@ -91,4 +91,10 @@ class CppBoilerplateConan(ConanFile):
         # Flow the Conan option into CMake: with tests disabled, BUILD_TESTING (from
         # include(CTest)) is off and find_package(GTest) is never reached.
         tc.cache_variables["BUILD_TESTING"] = bool(self.options.with_tests)
+        # Compiler caching for first-party targets when ccache is on PATH (same
+        # optional-tool probe as the ninja check above); dependency binaries come from
+        # the Conan cache and don't need it. The Visual Studio generator ignores
+        # CMAKE_CXX_COMPILER_LAUNCHER, so skip the probe on Windows.
+        if self.settings.os != "Windows" and shutil.which("ccache"):
+            tc.cache_variables["CMAKE_CXX_COMPILER_LAUNCHER"] = "ccache"
         tc.generate()
