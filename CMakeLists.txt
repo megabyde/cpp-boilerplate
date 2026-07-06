@@ -14,9 +14,10 @@ include(CTest)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
+option(WARNINGS_AS_ERRORS "Treat warnings as errors" ON)
 option(ENABLE_SANITIZERS "Enable sanitizer instrumentation" OFF)
 option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
+option(ENABLE_HARDENING "Enable hardening compile and link flags" ON)
 
 if(CMAKE_EXPORT_COMPILE_COMMANDS
    AND CMAKE_GENERATOR MATCHES "Ninja|Makefiles"
@@ -81,10 +82,39 @@ function(enable_coverage target)
     endif()
 endfunction()
 
+function(enable_hardening target)
+    # Instrumented builds skip hardening: _FORTIFY_SOURCE conflicts with the ASan
+    # interceptors, and coverage builds run at -O0 where glibc fortify warns (fatal
+    # under -Werror).
+    if(NOT ENABLE_HARDENING
+       OR ENABLE_SANITIZERS
+       OR ENABLE_COVERAGE
+    )
+        return()
+    endif()
+
+    if(MSVC)
+        # Control Flow Guard needs both compile and link; /GS is on by default.
+        target_compile_options(${target} PRIVATE /guard:cf)
+        target_link_options(${target} PRIVATE /guard:cf)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+        # Stack protector always; fortified libc calls only in optimized configs
+        # (fortify needs optimization, so Debug skips it). -U first: Ubuntu's gcc
+        # predefines _FORTIFY_SOURCE when optimizing, and redefining it is fatal
+        # under -Werror. Compile options, not definitions, to keep the -U/-D order.
+        target_compile_options(
+            ${target} PRIVATE -fstack-protector-strong
+            $<$<NOT:$<CONFIG:Debug>>:-U_FORTIFY_SOURCE;-D_FORTIFY_SOURCE=2>
+        )
+    endif()
+    # Other compilers fall through and build unhardened.
+endfunction()
+
 function(enable_project_options target)
     enable_project_warnings(${target})
     enable_sanitizers(${target})
     enable_coverage(${target})
+    enable_hardening(${target})
 endfunction()
 
 # --- library ---------------------------------------------------------------

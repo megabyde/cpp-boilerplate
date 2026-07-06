@@ -26,12 +26,11 @@ jobs:
     env:
       CC: ${{ matrix.compiler == 'gcc' && 'gcc' || 'clang' }}
       CXX: ${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
-      WARNINGS_AS_ERRORS: ON
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        preset: [release, sanitize]
+        preset: [debug, release, sanitize]
         compiler: [gcc, clang]
         exclude:
           - os: macos-latest
@@ -62,8 +61,6 @@ jobs:
   windows:
     name: release / windows-latest / msvc
     runs-on: windows-latest
-    env:
-      WARNINGS_AS_ERRORS: ON
     steps:
       - uses: actions/checkout@v4
       - uses: conan-io/setup-conan@v1
@@ -86,7 +83,6 @@ jobs:
     env:
       CC: gcc
       CXX: g++
-      WARNINGS_AS_ERRORS: ON
     steps:
       - uses: actions/checkout@v4
       - uses: conan-io/setup-conan@v1

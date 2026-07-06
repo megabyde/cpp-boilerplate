@@ -174,6 +174,9 @@ project leaves it at the default `ON`, so `make debug`, `make release`, `make sa
 The Conan-generated `conan-*` presets are internal implementation details and are not the public
 interface for developers or CI.
 
+Warnings are errors by default (`WARNINGS_AS_ERRORS`, default `ON`) in every preset, locally and
+in CI. Relax it for a single build tree with `cmake --preset <name> -DWARNINGS_AS_ERRORS=OFF`.
+
 ## Dependency lock file
 
 `conan.lock` pins the exact dependency graph for reproducible builds. To update dependencies:
@@ -211,6 +214,22 @@ The report fails if line coverage falls below `COVERAGE_FAIL_UNDER` (default 74;
 override with `make coverage-report COVERAGE_FAIL_UNDER=80`). `gcov` and `llvm-cov`
 count lines differently (gcov reports lower), so the floor tracks the gcov figure
 so both paths pass.
+
+## Hardening
+
+First-party targets build with hardening flags by default (`ENABLE_HARDENING`, default `ON`;
+disable with `-DENABLE_HARDENING=OFF` on any configure preset):
+
+- GCC/Clang/AppleClang: `-fstack-protector-strong` in every configuration; optimized
+  configurations add `-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2` (Debug skips fortification
+  because it requires optimization).
+- MSVC: `/guard:cf` (Control Flow Guard) at compile and link.
+- Other compilers build unhardened rather than failing to configure.
+
+Sanitizer and coverage builds omit hardening: `_FORTIFY_SOURCE` conflicts with the ASan
+interceptors, and coverage builds run at `-O0` where glibc fortification warns. Like the
+warning options, hardening covers first-party code only; dependency binaries from the Conan
+cache are not rebuilt with these flags.
 
 ## Install
 

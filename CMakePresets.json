@@ -10,41 +10,34 @@
   ],
   "configurePresets": [
     {
-      "name": "_warnings",
-      "hidden": true,
-      "cacheVariables": {
-        "WARNINGS_AS_ERRORS": "$env{WARNINGS_AS_ERRORS}"
-      }
-    },
-    {
       "name": "debug",
       "displayName": "Debug",
       "description": "Debug configuration backed by Conan's debug preset.",
-      "inherits": ["conan-debug", "_warnings"]
+      "inherits": "conan-debug"
     },
     {
       "name": "release",
       "displayName": "Release",
       "description": "Release configuration backed by Conan's release preset.",
-      "inherits": ["conan-release", "_warnings"]
+      "inherits": "conan-release"
     },
     {
       "name": "sanitize",
       "displayName": "Sanitizers (ASan + UBSan)",
       "description": "Debug configuration with combined ASan+UBSan instrumentation from the Conan sanitize profile.",
-      "inherits": ["conan-debug-addressundefinedbehavior", "_warnings"]
+      "inherits": "conan-debug-addressundefinedbehavior"
     },
     {
       "name": "sanitize-asan",
       "displayName": "Sanitizers (ASan)",
       "description": "Debug configuration with AddressSanitizer instrumentation from the Conan sanitize-asan profile.",
-      "inherits": ["conan-debug-address", "_warnings"]
+      "inherits": "conan-debug-address"
     },
     {
       "name": "sanitize-ubsan",
       "displayName": "Sanitizers (UBSan)",
       "description": "Debug configuration with UndefinedBehaviorSanitizer instrumentation from the Conan sanitize-ubsan profile.",
-      "inherits": ["conan-debug-undefinedbehavior", "_warnings"]
+      "inherits": "conan-debug-undefinedbehavior"
     },
     {
       "name": "coverage",
