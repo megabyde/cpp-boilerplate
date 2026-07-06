@@ -43,7 +43,7 @@ stable across toolchain changes.
 
 - [CMake](https://cmake.org/download/) 3.25+ (for workflow presets)
 - [Conan](https://docs.conan.io/2/installation.html) 2.25+ (for the `CMakeConfigDeps` generator)
-- [Ninja](https://ninja-build.org/) (required on Windows; GNU Make also works on Unix)
+- [Ninja](https://ninja-build.org/) (optional, Unix only; GNU Make is used when absent)
 - A compiler and standard library with working C++23 support
   - [GCC](https://gcc.gnu.org/) 13+
   - [LLVM Clang](https://llvm.org/) 17+
@@ -54,6 +54,8 @@ Conan chooses the CMake generator for you:
 
 - `Ninja` on Unix-like systems when it is available
 - `Unix Makefiles` on Unix-like systems when `ninja` is not installed
+- The Visual Studio generator matching the detected MSVC on Windows (multi-config; locates
+  MSVC itself, so no extra tool or `vcvars` environment is needed)
 
 This boilerplate supports Linux, macOS, and Windows.
 
@@ -81,8 +83,8 @@ make format-check
 ### Windows
 
 The `Makefile` is a Unix convenience wrapper. On Windows, drive Conan and the CMake
-presets directly from a shell with the MSVC environment loaded (a Developer
-PowerShell, or any shell after `vcvarsall`):
+presets directly from any shell; the Visual Studio generator locates MSVC on its own,
+so no Developer PowerShell or `vcvarsall` setup is required:
 
 ```console
 conan install . -pr=profiles/default -s build_type=Release --build=missing --lockfile=conan.lock

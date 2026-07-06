@@ -14,8 +14,10 @@ permissions:
   contents: read
 
 env:
-  # Pin the Conan version for reproducible CI. Bump here in one place.
+  # Pinned tool versions for reproducible CI. Bump here in one place.
   CONAN_VERSION: "2.29.1"
+  CLANG_FORMAT_VERSION: "21.1.8"
+  CLANG_TIDY_VERSION: "21.1.6"
 
 jobs:
   build:
@@ -53,9 +55,10 @@ jobs:
           cmake --install build/release --prefix "$RUNNER_TEMP/install"
           "$RUNNER_TEMP/install/bin/cpp_boilerplate"
 
-  # Windows has no make; it drives Conan and the CMake presets directly, using the
-  # MSVC environment Conan generates (conanbuild.bat) rather than a third-party
-  # action. The sanitize and coverage presets are Unix-only, so Windows covers release.
+  # Windows has no make; it drives Conan and the CMake presets directly. The Visual
+  # Studio generator (selected by conanfile.py on Windows) locates MSVC itself, so no
+  # vcvars environment or third-party action is needed. The sanitize and coverage
+  # presets are Unix-only, so Windows covers release.
   windows:
     name: release / windows-latest / msvc
     runs-on: windows-latest
@@ -67,14 +70,10 @@ jobs:
         with:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
-      # Ninja must be on PATH when Conan picks the generator at install time.
-      - run: pip install ninja
-      - run: conan install . -pr=profiles/default -s build_type=Release --build=missing --lockfile=conan.lock
+      - name: Install dependencies (release)
+        run: conan install . -pr=profiles/default -s build_type=Release --build=missing --lockfile=conan.lock
       - name: Build and test (release preset)
-        shell: cmd
-        run: |
-          call build\release\generators\conanbuild.bat
-          cmake --workflow --preset release || exit /b 1
+        run: cmake --workflow --preset release
       - name: Verify install (release)
         shell: cmd
         run: |
@@ -111,6 +110,13 @@ jobs:
         with:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
+      # ~/.local/bin precedes /usr/bin on the runner, so these shadow the image's
+      # unpinned clang-format/clang-tidy.
+      - name: Pin lint toolchain
+        run: |
+          python3 -m pip install --break-system-packages --user \
+            clang-format==${{ env.CLANG_FORMAT_VERSION }} \
+            clang-tidy==${{ env.CLANG_TIDY_VERSION }}
       - run: make bootstrap
       - run: make format-check
       - run: make lint

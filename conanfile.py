@@ -45,12 +45,17 @@ class CppBoilerplateConan(ConanFile):
         check_min_cppstd(self, 23)
 
     def _cmake_generator(self):
-        if shutil.which("ninja"):
-            return "Ninja"
-        # Unix Makefiles cannot drive MSVC; fall back to the VS generator there.
+        # Windows always uses the Visual Studio generator: it locates MSVC itself (no
+        # vcvars environment needed) and needs no extra tool on PATH. Return None so
+        # CMakeToolchain deduces the VS release from the detected compiler.version
+        # (msvc 194 -> "Visual Studio 17 2022", 195 -> "Visual Studio 18 2026");
+        # hardcoding a year breaks when the machine has a different VS installed.
+        # The preset names and build folders stay aligned with the single-config
+        # generators because build_folder_vars (see layout()) pins both, so the
+        # public presets are identical across platforms.
         if self.settings.os == "Windows":
-            return "Visual Studio 17 2022"
-        return "Unix Makefiles"
+            return None
+        return "Ninja" if shutil.which("ninja") else "Unix Makefiles"
 
     def layout(self):
         # Let Conan own the build layout. build_type gives build/debug and build/release;

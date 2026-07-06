@@ -67,9 +67,12 @@ endef
 # ---------------------------------------------------------------------------
 # Conan lock file (lazy — regenerated when conanfile.py changes)
 # ---------------------------------------------------------------------------
+# --lockfile-clean drops entries the current graph no longer uses; without it,
+# `conan lock create` merges into the existing lock and stale pins accumulate after
+# a version bump or a removed dependency.
 conan.lock: conanfile.py $(CONAN_PROFILE)
 	echo "Regenerating conan.lock..."
-	conan lock create . -pr=$(CONAN_PROFILE) --lockfile-out=conan.lock
+	conan lock create . -pr=$(CONAN_PROFILE) --lockfile-clean --lockfile-out=conan.lock
 
 # ---------------------------------------------------------------------------
 # Conan install
@@ -189,12 +192,12 @@ format-check: ## Fail if C++ sources are not clang-format clean
 .PHONY: lock
 lock: ## Force-regenerate conan.lock from conanfile.py
 	echo "Regenerating conan.lock..."
-	conan lock create . -pr=$(CONAN_PROFILE) --lockfile-out=conan.lock
+	conan lock create . -pr=$(CONAN_PROFILE) --lockfile-clean --lockfile-out=conan.lock
 
 .PHONY: lock-check
 lock-check: ## Fail if conan.lock is out of date with conanfile.py (used by CI)
 	tmp=$$(mktemp); \
-	conan lock create . -pr=$(CONAN_PROFILE) --lockfile-out=$$tmp >/dev/null 2>&1 \
+	conan lock create . -pr=$(CONAN_PROFILE) --lockfile-clean --lockfile-out=$$tmp >/dev/null 2>&1 \
 		|| { echo "ERROR: conan lock create failed"; rm -f $$tmp; exit 1; }; \
 	if diff conan.lock $$tmp >/dev/null; then \
 		rm -f $$tmp; echo "conan.lock is up to date"; \
