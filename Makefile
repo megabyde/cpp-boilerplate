@@ -88,6 +88,15 @@ $(STAMP_DIR)/debug.stamp $(STAMP_DIR)/release.stamp: conan.lock
 $(STAMP_DIR)/sanitize.stamp: conan.lock conan/settings_user.yml profiles/sanitize profiles/sanitize-common
 	echo "Installing Conan dependencies (sanitize)..."
 	mkdir -p $(STAMP_DIR)
+	# conan config install copies settings_user.yml into the Conan home, which would
+	# silently overwrite a settings_user.yml another project put there. Refuse when a
+	# different one exists; the file is small enough to merge by hand.
+	installed="$$(conan config home)/settings_user.yml"; \
+	if [ -f "$$installed" ] && ! cmp -s conan/settings_user.yml "$$installed"; then \
+		echo "ERROR: $$installed exists and differs from conan/settings_user.yml."; \
+		echo "Merge conan/settings_user.yml into it by hand (or remove it), then rerun."; \
+		exit 1; \
+	fi
 	conan config install conan/
 	conan install . -pr=profiles/sanitize --build=missing --lockfile=conan.lock
 	touch $@
@@ -194,6 +203,9 @@ lock: ## Force-regenerate conan.lock from conanfile.py
 	echo "Regenerating conan.lock..."
 	conan lock create . -pr=$(CONAN_PROFILE) --lockfile-clean --lockfile-out=conan.lock
 
+# Scope: validates the graph resolved by the default profile only. If requirements()
+# ever gains platform-conditional requires (the pattern its comment advertises), this
+# check needs to run once per platform profile to cover the full graph.
 .PHONY: lock-check
 lock-check: ## Fail if conan.lock is out of date with conanfile.py (used by CI)
 	tmp=$$(mktemp); \
