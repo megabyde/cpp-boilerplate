@@ -222,8 +222,8 @@ disable with `-DENABLE_HARDENING=OFF` on any configure preset):
 
 - GCC/Clang/AppleClang, all configurations: `-fstack-protector-strong`; AArch64 additionally
   gets `-mbranch-protection=standard` (BTI + pac-ret).
-- Optimized configurations add `-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3` (glibc; level 2 on
-  Apple's libc). Debug skips fortification because it requires optimization.
+- Optimized configurations add `-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2` on every platform.
+  Debug skips fortification because it requires optimization.
 - Linux adds `-fstack-clash-protection`, `-fcf-protection=full` on x86_64, and the ELF link
   flags `-Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack`.
 - MSVC adds `/guard:cf` (Control Flow Guard) at compile and link.

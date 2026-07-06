@@ -106,19 +106,14 @@ function(enable_hardening target)
 
     target_compile_options(${target} PRIVATE -fstack-protector-strong)
 
-    # Fortified libc calls need optimization, so Debug (-O0) skips them. -U first:
-    # Ubuntu's gcc predefines _FORTIFY_SOURCE when optimizing, and redefining it is
-    # fatal under -Werror. Compile options rather than compile definitions to keep
-    # the -U/-D order. glibc supports level 3; Apple's libc caps at 2.
-    if(APPLE)
-        set(fortify_level 2)
-    else()
-        set(fortify_level 3)
-    endif()
+    # Fortified libc calls need optimization, so Debug (-O0) skips them. Level 2 on
+    # every platform for identical semantics across libcs (Apple's libc clamps
+    # anything higher to 2 anyway). -U first: Ubuntu's gcc predefines
+    # _FORTIFY_SOURCE=3 when optimizing, and redefining it is fatal under -Werror.
+    # Compile options rather than compile definitions to keep the -U/-D order.
     target_compile_options(
-        ${target}
-        PRIVATE
-            $<$<NOT:$<CONFIG:Debug>>:-U_FORTIFY_SOURCE;-D_FORTIFY_SOURCE=${fortify_level}>
+        ${target} PRIVATE
+        $<$<NOT:$<CONFIG:Debug>>:-U_FORTIFY_SOURCE;-D_FORTIFY_SOURCE=2>
     )
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
