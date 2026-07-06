@@ -17,6 +17,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 option(ENABLE_SANITIZERS "Enable sanitizer instrumentation" OFF)
 option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
+option(ENABLE_HARDENING "Enable hardening compile and link flags" ON)
 
 if(CMAKE_EXPORT_COMPILE_COMMANDS
    AND CMAKE_GENERATOR MATCHES "Ninja|Makefiles"
@@ -81,10 +82,68 @@ function(enable_coverage target)
     endif()
 endfunction()
 
+function(enable_hardening target)
+    # Instrumented builds skip hardening: _FORTIFY_SOURCE conflicts with the ASan
+    # interceptors, and coverage builds run at -O0 where glibc fortify warns (fatal
+    # under -Werror).
+    if(NOT ENABLE_HARDENING
+       OR ENABLE_SANITIZERS
+       OR ENABLE_COVERAGE
+    )
+        return()
+    endif()
+
+    if(MSVC)
+        # Control Flow Guard needs both compile and link; /GS is on by default.
+        target_compile_options(${target} PRIVATE /guard:cf)
+        target_link_options(${target} PRIVATE /guard:cf)
+        return()
+    endif()
+
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+        message(FATAL_ERROR "Hardening requires MSVC, GCC, Clang, or AppleClang")
+    endif()
+
+    target_compile_options(${target} PRIVATE -fstack-protector-strong)
+
+    # Fortified libc calls need optimization, so Debug (-O0) skips them. -U first:
+    # Ubuntu's gcc predefines _FORTIFY_SOURCE when optimizing, and redefining it is
+    # fatal under -Werror. Compile options rather than compile definitions to keep
+    # the -U/-D order. glibc supports level 3; Apple's libc caps at 2.
+    if(APPLE)
+        set(fortify_level 2)
+    else()
+        set(fortify_level 3)
+    endif()
+    target_compile_options(
+        ${target}
+        PRIVATE
+            $<$<NOT:$<CONFIG:Debug>>:-U_FORTIFY_SOURCE;-D_FORTIFY_SOURCE=${fortify_level}>
+    )
+
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_compile_options(${target} PRIVATE -fstack-clash-protection)
+        # ELF-only link hardening (ld64 rejects -z): read-only relocations, immediate
+        # binding, non-executable stack.
+        target_link_options(
+            ${target} PRIVATE -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack
+        )
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
+            # Intel CET; x86-only and not supported on Darwin.
+            target_compile_options(${target} PRIVATE -fcf-protection=full)
+        endif()
+    endif()
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
+        # BTI + pac-ret on AArch64.
+        target_compile_options(${target} PRIVATE -mbranch-protection=standard)
+    endif()
+endfunction()
+
 function(enable_project_options target)
     enable_project_warnings(${target})
     enable_sanitizers(${target})
     enable_coverage(${target})
+    enable_hardening(${target})
 endfunction()
 
 # --- library ---------------------------------------------------------------

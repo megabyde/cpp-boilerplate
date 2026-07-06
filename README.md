@@ -212,6 +212,24 @@ override with `make coverage-report COVERAGE_FAIL_UNDER=80`). `gcov` and `llvm-c
 count lines differently (gcov reports lower), so the floor tracks the gcov figure
 so both paths pass.
 
+## Hardening
+
+First-party targets build with hardening flags by default (`ENABLE_HARDENING`, default `ON`;
+disable with `-DENABLE_HARDENING=OFF` on any configure preset):
+
+- GCC/Clang/AppleClang, all configurations: `-fstack-protector-strong`; AArch64 additionally
+  gets `-mbranch-protection=standard` (BTI + pac-ret).
+- Optimized configurations add `-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3` (glibc; level 2 on
+  Apple's libc). Debug skips fortification because it requires optimization.
+- Linux adds `-fstack-clash-protection`, `-fcf-protection=full` on x86_64, and the ELF link
+  flags `-Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack`.
+- MSVC adds `/guard:cf` (Control Flow Guard) at compile and link.
+
+Sanitizer and coverage builds omit hardening: `_FORTIFY_SOURCE` conflicts with the ASan
+interceptors, and coverage builds run at `-O0` where glibc fortification warns. Like the
+warning options, hardening covers first-party code only; dependency binaries from the Conan
+cache are not rebuilt with these flags.
+
 ## Install
 
 `cmake --install` installs the application binary to `<prefix>/bin`. Only the executable is
