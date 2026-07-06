@@ -100,8 +100,11 @@ function(enable_hardening target)
         return()
     endif()
 
+    # Unknown compilers build unhardened rather than failing configure: hardening is
+    # on by default, so a hard error here would block toolchains the user never asked
+    # to harden.
     if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
-        message(FATAL_ERROR "Hardening requires MSVC, GCC, Clang, or AppleClang")
+        return()
     endif()
 
     target_compile_options(${target} PRIVATE -fstack-protector-strong)
@@ -123,13 +126,15 @@ function(enable_hardening target)
         target_link_options(
             ${target} PRIVATE -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack
         )
-        if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
-            # Intel CET; x86-only and not supported on Darwin.
-            target_compile_options(${target} PRIVATE -fcf-protection=full)
-        endif()
     endif()
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
-        # BTI + pac-ret on AArch64.
+
+    # Control-flow integrity is arch-gated, not OS-gated: each flag is a hard error
+    # on the other architecture.
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
+        # Intel CET.
+        target_compile_options(${target} PRIVATE -fcf-protection=full)
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
+        # BTI + pac-ret.
         target_compile_options(${target} PRIVATE -mbranch-protection=standard)
     endif()
 endfunction()

@@ -220,13 +220,15 @@ so both paths pass.
 First-party targets build with hardening flags by default (`ENABLE_HARDENING`, default `ON`;
 disable with `-DENABLE_HARDENING=OFF` on any configure preset):
 
-- GCC/Clang/AppleClang, all configurations: `-fstack-protector-strong`; AArch64 additionally
-  gets `-mbranch-protection=standard` (BTI + pac-ret).
+- GCC/Clang/AppleClang, all configurations: `-fstack-protector-strong`, plus control-flow
+  integrity by architecture: `-fcf-protection=full` (Intel CET) on x86_64,
+  `-mbranch-protection=standard` (BTI + pac-ret) on AArch64.
 - Optimized configurations add `-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2` on every platform.
   Debug skips fortification because it requires optimization.
-- Linux adds `-fstack-clash-protection`, `-fcf-protection=full` on x86_64, and the ELF link
-  flags `-Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack`.
+- Linux adds `-fstack-clash-protection` and the ELF link flags
+  `-Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack`.
 - MSVC adds `/guard:cf` (Control Flow Guard) at compile and link.
+- Other compilers build unhardened rather than failing to configure.
 
 Sanitizer and coverage builds omit hardening: `_FORTIFY_SOURCE` conflicts with the ASan
 interceptors, and coverage builds run at `-O0` where glibc fortification warns. Like the
