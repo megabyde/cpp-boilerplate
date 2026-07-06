@@ -97,46 +97,17 @@ function(enable_hardening target)
         # Control Flow Guard needs both compile and link; /GS is on by default.
         target_compile_options(${target} PRIVATE /guard:cf)
         target_link_options(${target} PRIVATE /guard:cf)
-        return()
-    endif()
-
-    # Unknown compilers build unhardened rather than failing configure: hardening is
-    # on by default, so a hard error here would block toolchains the user never asked
-    # to harden.
-    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
-        return()
-    endif()
-
-    target_compile_options(${target} PRIVATE -fstack-protector-strong)
-
-    # Fortified libc calls need optimization, so Debug (-O0) skips them. Level 2 on
-    # every platform for identical semantics across libcs (Apple's libc clamps
-    # anything higher to 2 anyway). -U first: Ubuntu's gcc predefines
-    # _FORTIFY_SOURCE=3 when optimizing, and redefining it is fatal under -Werror.
-    # Compile options rather than compile definitions to keep the -U/-D order.
-    target_compile_options(
-        ${target} PRIVATE
-        $<$<NOT:$<CONFIG:Debug>>:-U_FORTIFY_SOURCE;-D_FORTIFY_SOURCE=2>
-    )
-
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        target_compile_options(${target} PRIVATE -fstack-clash-protection)
-        # ELF-only link hardening (ld64 rejects -z): read-only relocations, immediate
-        # binding, non-executable stack.
-        target_link_options(
-            ${target} PRIVATE -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+        # Stack protector always; fortified libc calls only in optimized configs
+        # (fortify needs optimization, so Debug skips it). -U first: Ubuntu's gcc
+        # predefines _FORTIFY_SOURCE when optimizing, and redefining it is fatal
+        # under -Werror. Compile options, not definitions, to keep the -U/-D order.
+        target_compile_options(
+            ${target} PRIVATE -fstack-protector-strong
+            $<$<NOT:$<CONFIG:Debug>>:-U_FORTIFY_SOURCE;-D_FORTIFY_SOURCE=2>
         )
     endif()
-
-    # Control-flow integrity is arch-gated, not OS-gated: each flag is a hard error
-    # on the other architecture.
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
-        # Intel CET.
-        target_compile_options(${target} PRIVATE -fcf-protection=full)
-    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
-        # BTI + pac-ret.
-        target_compile_options(${target} PRIVATE -mbranch-protection=standard)
-    endif()
+    # Other compilers fall through and build unhardened.
 endfunction()
 
 function(enable_project_options target)
