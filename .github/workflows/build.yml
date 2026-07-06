@@ -14,8 +14,10 @@ permissions:
   contents: read
 
 env:
-  # Pin the Conan version for reproducible CI. Bump here in one place.
+  # Pinned tool versions for reproducible CI. Bump here in one place.
   CONAN_VERSION: "2.29.1"
+  CLANG_FORMAT_VERSION: "21.1.8"
+  CLANG_TIDY_VERSION: "21.1.6"
 
 jobs:
   build:
@@ -111,6 +113,13 @@ jobs:
         with:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
+      # ~/.local/bin precedes /usr/bin on the runner, so these shadow the image's
+      # unpinned clang-format/clang-tidy.
+      - name: Pin lint toolchain
+        run: |
+          python3 -m pip install --break-system-packages --user \
+            clang-format==${{ env.CLANG_FORMAT_VERSION }} \
+            clang-tidy==${{ env.CLANG_TIDY_VERSION }}
       - run: make bootstrap
       - run: make format-check
       - run: make lint
