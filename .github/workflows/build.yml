@@ -26,6 +26,8 @@ jobs:
     env:
       CC: ${{ matrix.compiler == 'gcc' && 'gcc' || 'clang' }}
       CXX: ${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 200M
     strategy:
       fail-fast: false
       matrix:
@@ -42,11 +44,23 @@ jobs:
         with:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
+      - name: Install ccache
+        run: ${{ runner.os == 'macOS' && 'brew install ccache' || 'sudo apt-get install -y ccache' }}
+      # Rolling cache key: actions/cache saves only on an exact-key miss, so the run_id
+      # suffix makes every run save an updated cache while restore-keys warm-starts
+      # from the newest previous one.
+      - uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.preset }}-${{ github.run_id }}
+          restore-keys: ccache-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.preset }}-
       - run: make lock-check
       - run: make bootstrap
       - if: matrix.preset == 'sanitize'
         run: make bootstrap-sanitize
       - run: make ${{ matrix.preset }}
+      - name: ccache stats
+        run: ccache -sv
       # Install the application to a throwaway prefix and run it, verifying the install() rule.
       - name: Verify install (release)
         if: matrix.preset == 'release'
@@ -83,12 +97,20 @@ jobs:
     env:
       CC: gcc
       CXX: g++
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 200M
     steps:
       - uses: actions/checkout@v4
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
+      - run: sudo apt-get install -y ccache
+      - uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-coverage-${{ github.run_id }}
+          restore-keys: ccache-coverage-
       - run: python3 -m pip install --break-system-packages --user gcovr
       - run: make bootstrap
       # Builds, runs the suite, and fails if line coverage drops below the floor.
