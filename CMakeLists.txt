@@ -14,7 +14,7 @@ include(CTest)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
+option(WARNINGS_AS_ERRORS "Treat warnings as errors" ON)
 option(ENABLE_SANITIZERS "Enable sanitizer instrumentation" OFF)
 option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
 option(ENABLE_HARDENING "Enable hardening compile and link flags" ON)

@@ -174,6 +174,9 @@ project leaves it at the default `ON`, so `make debug`, `make release`, `make sa
 The Conan-generated `conan-*` presets are internal implementation details and are not the public
 interface for developers or CI.
 
+Warnings are errors by default (`WARNINGS_AS_ERRORS`, default `ON`) in every preset, locally and
+in CI. Relax it for a single build tree with `cmake --preset <name> -DWARNINGS_AS_ERRORS=OFF`.
+
 ## Dependency lock file
 
 `conan.lock` pins the exact dependency graph for reproducible builds. To update dependencies:
