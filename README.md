@@ -54,8 +54,8 @@ Conan chooses the CMake generator for you:
 
 - `Ninja` on Unix-like systems when it is available
 - `Unix Makefiles` on Unix-like systems when `ninja` is not installed
-- `Visual Studio 17 2022` on Windows (multi-config; locates MSVC itself, so no extra tool
-  or `vcvars` environment is needed)
+- The Visual Studio generator matching the detected MSVC on Windows (multi-config; locates
+  MSVC itself, so no extra tool or `vcvars` environment is needed)
 
 This boilerplate supports Linux, macOS, and Windows.
 
