@@ -1,7 +1,16 @@
 UNAME_S := $(shell uname -s)
 
 COLOR_CYAN := \033[36m
+COLOR_RED := \033[31m
 COLOR_RESET := \033[0m
+
+# Fail the recipe with a red ERROR message on stderr: $(DIE) "message". %b expands
+# \n for multi-line messages. A sh -c one-liner (message as shell arg $0) rather than
+# a $(call ...) macro because call splits its arguments on the commas messages contain.
+# The subprocess cannot exit the recipe shell itself, so a call site must either end
+# its recipe line (make checks each line's status) or run under `set -e` so the shell
+# stops at the failed status; every site here does one or the other.
+DIE := sh -c 'printf "$(COLOR_RED)ERROR:$(COLOR_RESET) %b\n" "$$0" >&2; exit 1'
 
 # Coverage uses two toolchains: Clang builds emit source-based profiles read by
 # llvm-cov; GCC builds emit gcov data read by gcovr. coverage-report auto-selects
@@ -61,7 +70,7 @@ FORMAT_SOURCES = $(shell find include src tests -type f \( -name '*.hpp' -o -nam
 TIDY_SOURCES = $(shell find src tests -type f -name '*.cpp')
 
 define require-tool
-	command -v $(1) >/dev/null || { echo "$(1) not found"; exit 1; }
+	command -v $(1) >/dev/null || $(DIE) "$(1) not found"
 endef
 
 # ---------------------------------------------------------------------------
@@ -88,6 +97,13 @@ $(STAMP_DIR)/debug.stamp $(STAMP_DIR)/release.stamp: conan.lock
 $(STAMP_DIR)/sanitize.stamp: conan.lock conan/settings_user.yml profiles/sanitize profiles/sanitize-common
 	echo "Installing Conan dependencies (sanitize)..."
 	mkdir -p $(STAMP_DIR)
+	# conan config install copies settings_user.yml into the Conan home, which would
+	# silently overwrite a settings_user.yml another project put there. Refuse when a
+	# different one exists; the file is small enough to merge by hand.
+	installed="$$(conan config home)/settings_user.yml"; \
+	if [ -f "$$installed" ] && ! cmp -s conan/settings_user.yml "$$installed"; then \
+		$(DIE) "$$installed exists and differs from conan/settings_user.yml.\nMerge conan/settings_user.yml into it by hand (or remove it), then rerun."; \
+	fi
 	conan config install conan/
 	conan install . -pr=profiles/sanitize --build=missing --lockfile=conan.lock
 	touch $@
@@ -194,16 +210,19 @@ lock: ## Force-regenerate conan.lock from conanfile.py
 	echo "Regenerating conan.lock..."
 	conan lock create . -pr=$(CONAN_PROFILE) --lockfile-clean --lockfile-out=conan.lock
 
+# Scope: validates the graph resolved by the default profile only. If requirements()
+# ever gains platform-conditional requires (the pattern its comment advertises), this
+# check needs to run once per platform profile to cover the full graph.
 .PHONY: lock-check
 lock-check: ## Fail if conan.lock is out of date with conanfile.py (used by CI)
-	tmp=$$(mktemp); \
+	set -e; tmp=$$(mktemp); trap 'rm -f "$$tmp"' EXIT; \
 	conan lock create . -pr=$(CONAN_PROFILE) --lockfile-clean --lockfile-out=$$tmp >/dev/null 2>&1 \
-		|| { echo "ERROR: conan lock create failed"; rm -f $$tmp; exit 1; }; \
+		|| $(DIE) "conan lock create failed"; \
 	if diff conan.lock $$tmp >/dev/null; then \
-		rm -f $$tmp; echo "conan.lock is up to date"; \
+		echo "conan.lock is up to date"; \
 	else \
-		echo "ERROR: conan.lock is stale; run 'make lock' and commit the result"; \
-		diff conan.lock $$tmp || true; rm -f $$tmp; exit 1; \
+		diff conan.lock $$tmp || true; \
+		$(DIE) "conan.lock is stale; run 'make lock' and commit the result"; \
 	fi
 
 .PHONY: clean
