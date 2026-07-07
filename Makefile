@@ -7,8 +7,9 @@ COLOR_RESET := \033[0m
 # Fail the recipe with a red ERROR message on stderr: $(DIE) "message". %b expands
 # \n for multi-line messages. A sh -c one-liner (message as shell arg $0) rather than
 # a $(call ...) macro because call splits its arguments on the commas messages contain.
-# The subprocess cannot exit the recipe shell mid-sequence, so keep it the last
-# command of its branch; its status then fails the recipe line.
+# The subprocess cannot exit the recipe shell itself, so a call site must either end
+# its recipe line (make checks each line's status) or run under `set -e` so the shell
+# stops at the failed status; every site here does one or the other.
 DIE := sh -c 'printf "$(COLOR_RED)ERROR:$(COLOR_RESET) %b\n" "$$0" >&2; exit 1'
 
 # Coverage uses two toolchains: Clang builds emit source-based profiles read by
@@ -214,13 +215,13 @@ lock: ## Force-regenerate conan.lock from conanfile.py
 # check needs to run once per platform profile to cover the full graph.
 .PHONY: lock-check
 lock-check: ## Fail if conan.lock is out of date with conanfile.py (used by CI)
-	tmp=$$(mktemp); \
+	set -e; tmp=$$(mktemp); trap 'rm -f "$$tmp"' EXIT; \
 	conan lock create . -pr=$(CONAN_PROFILE) --lockfile-clean --lockfile-out=$$tmp >/dev/null 2>&1 \
-		|| { rm -f $$tmp; $(DIE) "conan lock create failed"; }; \
+		|| $(DIE) "conan lock create failed"; \
 	if diff conan.lock $$tmp >/dev/null; then \
-		rm -f $$tmp; echo "conan.lock is up to date"; \
+		echo "conan.lock is up to date"; \
 	else \
-		diff conan.lock $$tmp || true; rm -f $$tmp; \
+		diff conan.lock $$tmp || true; \
 		$(DIE) "conan.lock is stale; run 'make lock' and commit the result"; \
 	fi
 
