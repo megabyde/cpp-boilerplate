@@ -1,10 +1,12 @@
 #include <cpp_boilerplate/split.hpp>
 #include <cpp_boilerplate/version.hpp>
 
+#include <CLI/CLI.hpp>
 #include <spdlog/spdlog.h>
 
 #include <cstddef>
 #include <exception>
+#include <string>
 #include <string_view>
 
 namespace {
@@ -26,12 +28,22 @@ void run()
 
 } // namespace
 
+// CLI11 setup before the try block throws only on programmer error.
 // NOLINTNEXTLINE(bugprone-exception-escape)
-int main()
+int main(int argc, char* argv[])
 {
+    CLI::App app{"Modern C++23 project template demo"};
+    app.set_version_flag("--version", std::string{cpp_boilerplate::version});
+    // Handles --help, --version, and argument errors, exiting with the right code.
+    CLI11_PARSE(app, argc, argv);
+
+    // Defensive scaffolding: nothing in the app throws today, so the handlers are
+    // excluded from coverage rather than left as uncovered lines or tested through
+    // artificial hooks.
     try {
         run();
         return 0;
+        // LCOV_EXCL_START
     }
     catch (const std::exception& error) {
         spdlog::critical("fatal: {}", error.what());
@@ -40,4 +52,5 @@ int main()
         spdlog::critical("fatal: unknown exception");
     }
     return 1;
+    // LCOV_EXCL_STOP
 }

@@ -16,6 +16,7 @@ This repository uses:
 - [CMake](https://cmake.org) configure, build, and test presets as the public build interface
 - [Conan 2](https://conan.io) for dependency management
 - [spdlog](https://github.com/gabime/spdlog) via Conan as the sample compiled dependency
+- [CLI11](https://github.com/CLIUtils/CLI11) via Conan for command-line parsing
 - [GoogleTest](https://github.com/google/googletest) via Conan
 
 ## Operating model
@@ -154,11 +155,8 @@ The default `make bootstrap` does not install sanitizer-instrumented dependencie
 `make bootstrap-sanitize` or `make sanitize` when you need them.
 
 First-party targets are instrumented by the same Conan toolchain (the profile's
-`tools.build:*` flags reach the consumer), so the `sanitize` preset does not also set
-the CMake `ENABLE_SANITIZERS` option, which would double the flags. `ENABLE_SANITIZERS`
-remains a standalone option for instrumenting first-party code without the Conan
-profile, e.g. `cmake --preset debug -DENABLE_SANITIZERS=ON` (dependencies stay
-uninstrumented in that mode).
+`tools.build:*` flags reach the consumer), so the profiles are the single source of
+sanitizer flags.
 
 ### Tests
 
@@ -204,18 +202,12 @@ Build, test, and generate an HTML coverage report with an enforced line floor:
 make coverage-report
 ```
 
-Coverage supports both compilers and selects the matching toolchain automatically
-from the build artifacts:
+Both compilers emit gcov-format data (`--coverage`), reported by a single tool:
+[gcovr](https://gcovr.com) (`pip install gcovr`). It writes
+`coverage-report/index.html` and `coverage.xml` under `build/coverage/`.
 
-- **Clang / AppleClang**: source-based instrumentation reported by `llvm-cov`.
-  Writes `coverage-report/index.html` and `coverage.lcov` under `build/coverage/`.
-- **GCC**: `gcov` instrumentation reported by `gcovr` (`pip install gcovr`). Writes
-  `coverage-report/index.html` and `coverage.xml` under `build/coverage/`.
-
-The report fails if line coverage falls below `COVERAGE_FAIL_UNDER` (default 74;
-override with `make coverage-report COVERAGE_FAIL_UNDER=80`). `gcov` and `llvm-cov`
-count lines differently (gcov reports lower), so the floor tracks the gcov figure
-so both paths pass.
+The report fails if line coverage falls below `COVERAGE_FAIL_UNDER` (default 100;
+override with `make coverage-report COVERAGE_FAIL_UNDER=80`).
 
 ## Hardening
 
@@ -248,6 +240,8 @@ $ /path/to/prefix/bin/cpp_boilerplate
 [2026-06-30 20:46:16.431] [info] field 1: beta
 [2026-06-30 20:46:16.431] [info] field 2: gamma
 [2026-06-30 20:46:16.431] [info] done
+$ /path/to/prefix/bin/cpp_boilerplate --version
+0.1.0
 ```
 
 ## IDE setup

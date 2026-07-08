@@ -36,6 +36,7 @@ class CppBoilerplateConan(ConanFile):
         #   if self.settings.os == "Windows":
         #       self.requires("...")
         self.requires("spdlog/1.17.0")
+        self.requires("cli11/2.6.2")
 
     def validate(self):
         # Require C++23 at the standard level (catches a profile pinning an older
