@@ -4,6 +4,10 @@ COLOR_CYAN := \033[36m
 COLOR_RED := \033[31m
 COLOR_RESET := \033[0m
 
+CLICOLOR ?= 1
+GTEST_COLOR ?= 1
+export CLICOLOR GTEST_COLOR
+
 # Fail the recipe with a red ERROR message on stderr: $(DIE) "message". %b expands
 # \n for multi-line messages. A sh -c one-liner (message as shell arg $0) rather than
 # a $(call ...) macro because call splits its arguments on the commas messages contain.

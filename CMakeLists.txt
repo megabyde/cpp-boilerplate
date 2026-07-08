@@ -13,6 +13,10 @@ include(CTest)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_COLOR_DIAGNOSTICS
+    ON
+    CACHE BOOL "Enable color diagnostics in generated build systems"
+)
 
 option(WARNINGS_AS_ERRORS "Treat warnings as errors" ON)
 option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
