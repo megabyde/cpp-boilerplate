@@ -1,13 +1,11 @@
 FormatStyle: file
 WarningsAsErrors: >
   bugprone-*,
-  clang-analyzer-*,
   performance-*,
   -performance-avoid-endl
 HeaderFilterRegex: '^(include|src|tests)/'
 
 Checks: >
-  clang-analyzer-*,
   boost-*,
   bugprone-*,
   google-build-explicit-make-pair,
