@@ -1,6 +1,7 @@
 # C++ Boilerplate
 
 [![Build](https://github.com/megabyde/cpp-boilerplate/actions/workflows/build.yml/badge.svg)](https://github.com/megabyde/cpp-boilerplate/actions/workflows/build.yml)
+[![Pages](https://github.com/megabyde/cpp-boilerplate/actions/workflows/pages.yml/badge.svg)](https://github.com/megabyde/cpp-boilerplate/actions/workflows/pages.yml)
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)](https://en.cppreference.com/w/cpp/23)
 [![CMake](https://img.shields.io/badge/CMake-3.25%2B-064F8C.svg)](https://cmake.org)
 [![Conan](https://img.shields.io/badge/Conan-2.x-6699CB.svg)](https://conan.io)
@@ -18,6 +19,7 @@ This repository uses:
 - [spdlog](https://github.com/gabime/spdlog) via Conan as the sample compiled dependency
 - [CLI11](https://github.com/CLIUtils/CLI11) via Conan for command-line parsing
 - [GoogleTest](https://github.com/google/googletest) via Conan
+- [Doxygen](https://www.doxygen.nl) for generated API documentation
 
 ## Operating model
 
@@ -47,6 +49,7 @@ stable across toolchain changes.
 - [Ninja](https://ninja-build.org/) (optional, Unix only; GNU Make is used when absent)
 - [ccache](https://ccache.dev/) (optional; used automatically for first-party targets when on
   PATH — not with the Visual Studio generator, which ignores compiler launchers)
+- [Doxygen](https://www.doxygen.nl) (optional; required only for `make docs`)
 - A compiler and standard library with working C++23 support
   - [GCC](https://gcc.gnu.org/) 13+
   - [LLVM Clang](https://llvm.org/) 17+
@@ -166,8 +169,10 @@ project leaves it at the default `ON`, so `make debug`, `make release`, `make sa
 
 ## Public presets
 
-- Configure presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`, `coverage`
-- Build presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`, `coverage`
+- Configure presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`,
+  `coverage`, `docs`
+- Build presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`, `coverage`,
+  `docs`
 - Test presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`, `coverage`
 - Workflow presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`, `coverage` (configure + build + test)
 
@@ -208,6 +213,17 @@ Both compilers emit gcov-format data (`--coverage`), reported by a single tool:
 
 The report fails if line coverage falls below `COVERAGE_FAIL_UNDER` (default 100;
 override with `make coverage-report COVERAGE_FAIL_UNDER=80`).
+
+## Documentation
+
+Generate Doxygen HTML documentation locally:
+
+```console
+make docs
+```
+
+The output is written to `build/docs/html/`. GitHub Pages builds the same target and publishes the
+result from the `main` branch.
 
 ## Hardening
 

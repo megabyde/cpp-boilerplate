@@ -49,6 +49,17 @@
       "cacheVariables": {
         "ENABLE_COVERAGE": "ON"
       }
+    },
+    {
+      "name": "docs",
+      "displayName": "Docs",
+      "description": "Doxygen documentation build. Reuses the debug Conan toolchain.",
+      "inherits": "debug",
+      "binaryDir": "${sourceDir}/build/docs",
+      "toolchainFile": "${sourceDir}/build/debug/generators/conan_toolchain.cmake",
+      "cacheVariables": {
+        "BUILD_TESTING": "OFF"
+      }
     }
   ],
   "buildPresets": [
@@ -81,6 +92,12 @@
       "name": "coverage",
       "configurePreset": "coverage",
       "configuration": "Debug"
+    },
+    {
+      "name": "docs",
+      "configurePreset": "docs",
+      "configuration": "Debug",
+      "targets": ["docs"]
     }
   ],
   "testPresets": [

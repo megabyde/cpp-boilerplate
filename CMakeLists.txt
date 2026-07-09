@@ -34,6 +34,7 @@ endif()
 
 find_package(spdlog CONFIG REQUIRED)
 find_package(CLI11 CONFIG REQUIRED)
+find_package(Doxygen QUIET)
 
 function(enable_project_warnings target)
     if(MSVC)
@@ -114,6 +115,33 @@ enable_project_options(cpp_boilerplate)
 # public deliverable, so it is deliberately not installed or exported.
 include(GNUInstallDirs)
 install(TARGETS cpp_boilerplate RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# --- documentation ---------------------------------------------------------
+if(Doxygen_FOUND)
+    set(DOXYGEN_EXTRACT_ALL NO)
+    set(DOXYGEN_FULL_PATH_NAMES NO)
+    set(DOXYGEN_HTML_OUTPUT html)
+    set(DOXYGEN_MARKDOWN_ID_STYLE GITHUB)
+    set(DOXYGEN_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+    set(DOXYGEN_SOURCE_BROWSER YES)
+    set(DOXYGEN_STRIP_FROM_PATH ${PROJECT_SOURCE_DIR})
+    set(DOXYGEN_USE_MDFILE_AS_MAINPAGE ${PROJECT_SOURCE_DIR}/README.md)
+    set(DOXYGEN_WARN_AS_ERROR YES)
+
+    doxygen_add_docs(
+        docs
+        ${PROJECT_SOURCE_DIR}/README.md
+        ${PROJECT_SOURCE_DIR}/include
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMENT "Generate API documentation"
+    )
+else()
+    add_custom_target(
+        docs
+        COMMAND ${CMAKE_COMMAND} -E echo "Doxygen not found. Install Doxygen to build docs."
+        COMMAND ${CMAKE_COMMAND} -E false
+    )
+endif()
 
 # --- tests -----------------------------------------------------------------
 if(BUILD_TESTING)
