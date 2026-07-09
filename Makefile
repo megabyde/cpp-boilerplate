@@ -37,7 +37,7 @@ ifneq ($(VERBOSE),1)
 endif
 
 # ---------------------------------------------------------------------------
-# Conan configuration — release gets its own profile state, coverage reuses the
+# Conan configuration: release gets its own profile state, coverage reuses the
 # debug toolchain (its dependency graph is identical to Debug), and sanitize uses
 # a dedicated profile plus a custom compiler.sanitizer setting (conan/settings_user.yml)
 # so instrumented dependency binaries get a distinct package_id and are rebuilt
@@ -63,7 +63,7 @@ define require-tool
 endef
 
 # ---------------------------------------------------------------------------
-# Conan lock file (lazy — regenerated when conanfile.py changes)
+# Conan lock file (lazy: regenerated when conanfile.py changes)
 # ---------------------------------------------------------------------------
 # --lockfile-clean drops entries the current graph no longer uses; without it,
 # `conan lock create` merges into the existing lock and stale pins accumulate after

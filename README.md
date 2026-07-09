@@ -5,7 +5,7 @@
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)](https://en.cppreference.com/w/cpp/23)
 [![CMake](https://img.shields.io/badge/CMake-3.25%2B-064F8C.svg)](https://cmake.org)
 [![Conan](https://img.shields.io/badge/Conan-2.x-6699CB.svg)](https://conan.io)
-[![License](https://img.shields.io/badge/license-Unlicense-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Unlicense-green.svg)](./LICENSE)
 
 ## Overview
 
@@ -61,7 +61,7 @@ stable across toolchain changes.
 - [Conan](https://docs.conan.io/2/installation.html) 2.25+ (for the `CMakeConfigDeps` generator)
 - [Ninja](https://ninja-build.org/) (optional, Unix only; GNU Make is used when absent)
 - [ccache](https://ccache.dev/) (optional; used automatically for first-party targets when on
-  PATH — not with the Visual Studio generator, which ignores compiler launchers)
+  PATH; not with the Visual Studio generator, which ignores compiler launchers)
 - [Doxygen](https://www.doxygen.nl) (optional; required only for `make docs`)
 - A compiler and standard library with working C++23 support
   - [GCC](https://gcc.gnu.org/) 13+
@@ -125,10 +125,10 @@ shared base, [`profiles/sanitize-common`](profiles/sanitize-common) (which pulls
 `profiles/default`, sets `Debug`, and carries the common instrumentation flags and `[runenv]`),
 and appends its own `-fsanitize` flags:
 
-- `sanitize` — combined ASan + UBSan ([`profiles/sanitize`](profiles/sanitize)); driven by
+- `sanitize`: combined ASan + UBSan ([`profiles/sanitize`](profiles/sanitize)); driven by
   `make sanitize` and CI.
-- `sanitize-asan` — AddressSanitizer only ([`profiles/sanitize-asan`](profiles/sanitize-asan)).
-- `sanitize-ubsan` — UndefinedBehaviorSanitizer only
+- `sanitize-asan`: AddressSanitizer only ([`profiles/sanitize-asan`](profiles/sanitize-asan)).
+- `sanitize-ubsan`: UndefinedBehaviorSanitizer only
   ([`profiles/sanitize-ubsan`](profiles/sanitize-ubsan)).
 
 Each `make sanitize*` target installs the matching instrumented dependency graph, then runs the
@@ -140,7 +140,7 @@ Each mode gets its own `package_id` and build tree (`build/debug-address`,
 ASan/UBSan runtime options (`halt_on_error`, `print_stacktrace`, and related checks) live in
 `profiles/sanitize-common` under `[runenv]` (inherited by every mode). Conan injects them into
 the generated per-mode test preset, which the public `sanitize*` test preset inherits, so
-`ctest`/`cmake --workflow` runs the instrumented tests with those options — a single source of
+`ctest`/`cmake --workflow` runs the instrumented tests with those options: a single source of
 truth, no duplication in `CMakePresets.json`.
 
 That separation relies on a custom `compiler.sanitizer` setting defined in

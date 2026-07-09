@@ -120,6 +120,10 @@ install(TARGETS cpp_boilerplate RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 if(Doxygen_FOUND)
     set(DOXYGEN_EXTRACT_ALL NO)
     set(DOXYGEN_FULL_PATH_NAMES NO)
+    # Copies LICENSE next to index.html so README's license badge (a relative ./LICENSE link)
+    # resolves in the generated site too; Doxygen does not rewrite that link on its own, since a
+    # bare LICENSE has no extension it treats as a documentable page type.
+    set(DOXYGEN_HTML_EXTRA_FILES ${PROJECT_SOURCE_DIR}/LICENSE)
     set(DOXYGEN_HTML_OUTPUT html)
     set(DOXYGEN_MARKDOWN_ID_STYLE GITHUB)
     set(DOXYGEN_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
@@ -128,9 +132,10 @@ if(Doxygen_FOUND)
     set(DOXYGEN_USE_MDFILE_AS_MAINPAGE ${PROJECT_SOURCE_DIR}/README.md)
     set(DOXYGEN_WARN_AS_ERROR YES)
 
+    # LICENSE is also listed as an input (not just HTML_EXTRA_FILES) so editing it invalidates the
+    # docs target and it shows up in the source browser.
     doxygen_add_docs(
-        docs
-        ${PROJECT_SOURCE_DIR}/README.md
+        docs ${PROJECT_SOURCE_DIR}/README.md ${PROJECT_SOURCE_DIR}/LICENSE
         ${PROJECT_SOURCE_DIR}/include
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Generate API documentation"
@@ -153,9 +158,9 @@ if(BUILD_TESTING)
 
     gtest_discover_tests(cpp_boilerplate_test DISCOVERY_MODE PRE_TEST)
 
-    # Smoke tests: exercise the application binary end to end — the normal run, the --version and
-    # --help branches, and the error path (unknown argument -> nonzero exit). Together they cover
-    # all of src/main.cpp, including under the sanitizer and coverage presets.
+    # Smoke tests: exercise the application binary end to end, covering the normal run, the
+    # --version and --help branches, and the error path (unknown argument -> nonzero exit). Together
+    # they cover all of src/main.cpp, including under the sanitizer and coverage presets.
     add_test(NAME AppTest.RunsToCompletion COMMAND cpp_boilerplate)
     set_tests_properties(AppTest.RunsToCompletion PROPERTIES PASS_REGULAR_EXPRESSION "done")
 
