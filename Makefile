@@ -128,6 +128,11 @@ sanitize: ## Build and test via the sanitize workflow preset
 .PHONY: coverage
 coverage: coverage-data-clean ## Build and test via the coverage workflow preset
 
+.PHONY: docs
+docs: $(STAMP_DIR)/debug.stamp ## Generate Doxygen HTML documentation
+	cmake --preset docs
+	cmake --build --preset docs
+
 debug release sanitize coverage: %: $(STAMP_DIR)/$$(CONAN_STAMP_%).stamp
 	cmake --workflow --preset $@
 
