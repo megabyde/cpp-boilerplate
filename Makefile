@@ -36,8 +36,6 @@ ifneq ($(VERBOSE),1)
 .SILENT:
 endif
 
-.SECONDEXPANSION:
-
 # ---------------------------------------------------------------------------
 # Conan configuration — release gets its own profile state, coverage reuses the
 # debug toolchain (its dependency graph is identical to Debug), and sanitize uses
@@ -46,10 +44,6 @@ endif
 # rather than reused from cache.
 # ---------------------------------------------------------------------------
 CONAN_PROFILE ?= profiles/default
-CONAN_STAMP_debug := debug
-CONAN_STAMP_release := release
-CONAN_STAMP_sanitize := sanitize
-CONAN_STAMP_coverage := debug
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -57,6 +51,10 @@ CONAN_STAMP_coverage := debug
 STAMP_DIR := build/.stamps
 COVERAGE_DIR := build/coverage
 COVERAGE_FAIL_UNDER ?= 100
+SANITIZE_STAMPS := \
+	$(STAMP_DIR)/sanitize.stamp \
+	$(STAMP_DIR)/sanitize-asan.stamp \
+	$(STAMP_DIR)/sanitize-ubsan.stamp
 FORMAT_SOURCES = $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
 TIDY_SOURCES = $(shell find src tests -type f -name '*.cpp')
 
@@ -85,8 +83,8 @@ $(STAMP_DIR)/debug.stamp $(STAMP_DIR)/release.stamp: conan.lock
 	conan install . -pr=$(CONAN_PROFILE) -s build_type=$(BUILD_TYPE) --build=missing --lockfile=conan.lock
 	touch $@
 
-$(STAMP_DIR)/sanitize.stamp: conan.lock conan/settings_user.yml profiles/sanitize profiles/sanitize-common
-	echo "Installing Conan dependencies (sanitize)..."
+$(SANITIZE_STAMPS): $(STAMP_DIR)/%.stamp: conan.lock conan/settings_user.yml profiles/sanitize-common profiles/%
+	echo "Installing Conan dependencies ($*)..."
 	mkdir -p $(STAMP_DIR)
 	# conan config install copies settings_user.yml into the Conan home, which would
 	# silently overwrite a settings_user.yml another project put there. Refuse when a
@@ -96,7 +94,7 @@ $(STAMP_DIR)/sanitize.stamp: conan.lock conan/settings_user.yml profiles/sanitiz
 		$(DIE) "$$installed exists and differs from conan/settings_user.yml.\nMerge conan/settings_user.yml into it by hand (or remove it), then rerun."; \
 	fi
 	conan config install conan/
-	conan install . -pr=profiles/sanitize --build=missing --lockfile=conan.lock
+	conan install . -pr=profiles/$* --build=missing --lockfile=conan.lock
 	touch $@
 
 # ---------------------------------------------------------------------------
@@ -111,7 +109,7 @@ help: ## Show this help message
 .PHONY: bootstrap
 bootstrap: $(STAMP_DIR)/debug.stamp $(STAMP_DIR)/release.stamp ## Install Conan dependencies for debug+release
 .PHONY: bootstrap-sanitize
-bootstrap-sanitize: $(STAMP_DIR)/sanitize.stamp ## Install sanitizer-instrumented Conan dependencies
+bootstrap-sanitize: $(SANITIZE_STAMPS) ## Install sanitizer-instrumented Conan dependencies
 
 # ---------------------------------------------------------------------------
 # Build + test via workflow presets
@@ -125,6 +123,12 @@ release: ## Build and test via the release workflow preset
 .PHONY: sanitize
 sanitize: ## Build and test via the sanitize workflow preset
 
+.PHONY: sanitize-asan
+sanitize-asan: ## Build and test via the ASan workflow preset
+
+.PHONY: sanitize-ubsan
+sanitize-ubsan: ## Build and test via the UBSan workflow preset
+
 .PHONY: coverage
 coverage: coverage-data-clean ## Build and test via the coverage workflow preset
 
@@ -133,7 +137,11 @@ docs: $(STAMP_DIR)/debug.stamp ## Generate Doxygen HTML documentation
 	cmake --preset docs
 	cmake --build --preset docs
 
-debug release sanitize coverage: %: $(STAMP_DIR)/$$(CONAN_STAMP_%).stamp
+debug release sanitize sanitize-asan sanitize-ubsan: %: $(STAMP_DIR)/%.stamp
+	cmake --workflow --preset $@
+
+# coverage reuses the debug Conan dependency graph (see the Conan configuration note above).
+coverage: $(STAMP_DIR)/debug.stamp
 	cmake --workflow --preset $@
 
 # ---------------------------------------------------------------------------
