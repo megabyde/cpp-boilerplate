@@ -28,23 +28,24 @@ void run()
 
 } // namespace
 
-// CLI11 setup before the try block throws only on programmer error.
 // NOLINTNEXTLINE(bugprone-exception-escape)
 int main(int argc, char* argv[])
 {
     CLI::App app{"Modern C++23 project template demo"};
     app.set_version_flag("--version", std::string{cpp_boilerplate::version});
-    // Handles --help, --version, and argument errors, exiting with the right code.
-    CLI11_PARSE(app, argc, argv);
 
+    try {
+        app.parse(argc, argv);
+        run();
+        return 0;
+    }
+    catch (const CLI::ParseError& error) {
+        return app.exit(error);
+    }
     // Defensive scaffolding: nothing in the app throws today, so the handlers are
     // excluded from coverage rather than left as uncovered lines or tested through
     // artificial hooks.
-    try {
-        run();
-        return 0;
-        // LCOV_EXCL_START
-    }
+    // LCOV_EXCL_START
     catch (const std::exception& error) {
         spdlog::critical("fatal: {}", error.what());
     }
