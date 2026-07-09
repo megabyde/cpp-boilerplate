@@ -42,6 +42,19 @@ When you change the Conan configuration (versions, options, or profile), rerun `
 the matching `make` target and keep using the same public preset names. The preset interface is
 stable across toolchain changes.
 
+## Layout
+
+```text
+.
+|-- include/                 public headers
+|-- src/                     application sources
+|-- tests/                   unit tests
+|-- conanfile.py             Conan dependency definition
+|-- conan/settings_user.yml  custom sanitizer setting
+|-- profiles/                default and sanitizer Conan profiles
+`-- CMakePresets.json        project-owned public presets
+```
+
 ## Prerequisites
 
 - [CMake](https://cmake.org/download/) 3.25+ (for workflow presets)
@@ -72,19 +85,12 @@ This boilerplate supports Linux, macOS, and Windows.
 ```console
 git clone https://github.com/megabyde/cpp-boilerplate.git
 cd cpp-boilerplate
-make bootstrap          # one-time; generates ConanPresets.json
+make bootstrap  # generates ConanPresets.json
 make debug
 ```
 
-Other local convenience targets:
-
-```console
-make release
-make sanitize
-make coverage
-make lint
-make format-check
-```
+> [!TIP]
+> Run `make help` to list local convenience targets.
 
 ### Windows
 
@@ -98,13 +104,15 @@ cmake --workflow --preset release
 ```
 
 `cmake --workflow --preset <name>` runs configure, build, and test in one step; it
-is what the `make` targets call on Unix too. The `sanitize` and `coverage` presets
-are Unix-only.
+is what the `make` targets call on Unix too. The `sanitize`, `sanitize-asan`,
+`sanitize-ubsan`, and `coverage` presets are Unix-only.
 
 ### Sanitizers (ASAN + UBSAN)
 
 ```console
 make sanitize
+make sanitize-asan
+make sanitize-ubsan
 ```
 
 This uses a dedicated sanitizer build tree (Conan names it `build/debug-addressundefinedbehavior`
@@ -123,14 +131,8 @@ and appends its own `-fsanitize` flags:
 - `sanitize-ubsan` — UndefinedBehaviorSanitizer only
   ([`profiles/sanitize-ubsan`](profiles/sanitize-ubsan)).
 
-`make sanitize` runs the combined mode. The single-mode presets are runnable directly once
-their instrumented dependencies are installed (all three share `conan.lock`):
-
-```console
-conan config install conan/  # once; installs conan/settings_user.yml, i.e. the compiler.sanitizer setting (bootstrap-sanitize does this too)
-conan install . -pr=profiles/sanitize-asan --build=missing --lockfile=conan.lock
-cmake --workflow --preset sanitize-asan
-```
+Each `make sanitize*` target installs the matching instrumented dependency graph, then runs the
+matching CMake workflow preset. All three modes share `conan.lock`.
 
 Each mode gets its own `package_id` and build tree (`build/debug-address`,
 `build/debug-undefinedbehavior`, `build/debug-addressundefinedbehavior`).
@@ -155,7 +157,7 @@ side effect: it adds the `compiler.sanitizer` subsetting (default `null`, omitte
 `package_id`) and does not change non-sanitize builds.
 
 The default `make bootstrap` does not install sanitizer-instrumented dependencies. Run
-`make bootstrap-sanitize` or `make sanitize` when you need them.
+`make bootstrap-sanitize` or the matching `make sanitize*` target when you need them.
 
 First-party targets are instrumented by the same Conan toolchain (the profile's
 `tools.build:*` flags reach the consumer), so the profiles are the single source of
@@ -164,23 +166,17 @@ sanitizer flags.
 ### Tests
 
 Tests are controlled by CMake's built-in `BUILD_TESTING` option from `include(CTest)`. This
-project leaves it at the default `ON`, so `make debug`, `make release`, `make sanitize`, and
-`make coverage` all run the gtest suite.
+project leaves it at the default `ON`, so `make debug`, `make release`, `make sanitize*`, and
+`make coverage` all run the GTest suite.
 
 ## Public presets
 
-- Configure presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`,
-  `coverage`, `docs`
-- Build presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`, `coverage`,
-  `docs`
-- Test presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`, `coverage`
-- Workflow presets: `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`, `coverage` (configure + build + test)
+The main workflow presets are `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`,
+and `coverage`. Configure, build, and test presets use the same names. `docs` is configure/build
+only because it generates Doxygen HTML instead of compiling and testing the application.
 
 The Conan-generated `conan-*` presets are internal implementation details and are not the public
 interface for developers or CI.
-
-Warnings are errors by default (`WARNINGS_AS_ERRORS`, default `ON`) in every preset, locally and
-in CI. Relax it for a single build tree with `cmake --preset <name> -DWARNINGS_AS_ERRORS=OFF`.
 
 ## Dependency lock file
 
@@ -207,7 +203,7 @@ Build, test, and generate an HTML coverage report with an enforced line floor:
 make coverage-report
 ```
 
-Both compilers emit gcov-format data (`--coverage`), reported by a single tool:
+Both compilers emit GCov-format data (`--coverage`), reported by a single tool:
 [gcovr](https://gcovr.com) (`pip install gcovr`). It writes
 `coverage-report/index.html` and `coverage.xml` under `build/coverage/`.
 
@@ -225,9 +221,12 @@ make docs
 The output is written to `build/docs/html/`. GitHub Pages builds the same target and publishes the
 result from the `main` branch.
 
-## Hardening
+## Build policy
 
-First-party targets build with hardening flags by default (`ENABLE_HARDENING`, default `ON`;
+Warnings are errors by default (`WARNINGS_AS_ERRORS`, default `ON`) in every preset, locally and
+in CI. Relax it for a single build tree with `cmake --preset <name> -DWARNINGS_AS_ERRORS=OFF`.
+
+First-party targets also build with hardening flags by default (`ENABLE_HARDENING`, default `ON`;
 disable with `-DENABLE_HARDENING=OFF` on any configure preset):
 
 - GCC/Clang/AppleClang: `-fstack-protector-strong` in every configuration; optimized
@@ -276,20 +275,10 @@ start `Debug: CMake Target`. F5 builds the selected debug target and launches it
 CLion can use the same public presets. Run `make bootstrap` first, then in CLion:
 
 1. Open the project root
-2. Select the `debug`, `release`, `sanitize`, or `coverage` preset as the active CMake profile
+2. Select the `debug`, `release`, `sanitize*`, or `coverage` preset as the active CMake profile
 3. Reload CMake
 
 > [!NOTE]
 > No IDE-specific task files are required for the build. The presets are the source of truth.
-> `debug`, `sanitize`, and `coverage` each use their own build tree, so switching between them does not
-> require forcing a fresh reconfigure.
-
-## Layout
-
-- `include/`: public headers
-- `src/`: application sources
-- `tests/`: unit tests
-- `conanfile.py`: Conan dependency definition
-- `conan/settings_user.yml`: custom `compiler.sanitizer` setting for instrumented dependency builds
-- `profiles/`: Conan profiles (`default`; `sanitize-common` base inherited by `sanitize`, `sanitize-asan`, `sanitize-ubsan`)
-- `CMakePresets.json`: project-owned public presets
+> `debug`, `sanitize`, and `coverage` each use their own build tree, so switching between them
+> does not require forcing a fresh reconfigure.
