@@ -39,7 +39,7 @@ jobs:
             compiler: gcc
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}
@@ -49,7 +49,7 @@ jobs:
       # Rolling cache key: actions/cache saves only on an exact-key miss, so the run_id
       # suffix makes every run save an updated cache while restore-keys warm-starts
       # from the newest previous one.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .ccache
           key: ccache-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.preset }}-${{ github.run_id }}
@@ -76,7 +76,7 @@ jobs:
     name: release / windows-latest / msvc
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}
@@ -100,13 +100,13 @@ jobs:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_MAXSIZE: 200M
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
       - run: sudo apt-get install -y ccache
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .ccache
           key: ccache-coverage-${{ github.run_id }}
@@ -115,7 +115,7 @@ jobs:
       - run: make bootstrap
       # Builds, runs the suite, and fails if line coverage drops below the floor.
       - run: make coverage-report
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: build/coverage/coverage-report/
@@ -123,7 +123,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}

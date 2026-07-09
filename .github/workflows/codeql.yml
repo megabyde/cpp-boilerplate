@@ -24,8 +24,8 @@ jobs:
       CONAN_VERSION: "2.29.1"
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
+      - uses: actions/checkout@v7
+      - uses: github/codeql-action/init@v4
         with:
           languages: c-cpp
       - uses: conan-io/setup-conan@v1
@@ -33,4 +33,4 @@ jobs:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
       - run: make release
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@v4
