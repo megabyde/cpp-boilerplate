@@ -16,6 +16,9 @@ permissions:
 
 env:
   CONAN_VERSION: "2.29.1"
+  # Ubuntu's apt package (1.9.8 on noble) trails upstream by years; install the pinned
+  # release directly instead.
+  DOXYGEN_VERSION: "1.17.0"
 
 jobs:
   build:
@@ -27,7 +30,11 @@ jobs:
         with:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
-      - run: sudo apt-get install -y doxygen
+      - name: Install Doxygen
+        run: |
+          version="${{ env.DOXYGEN_VERSION }}"
+          curl -sL "https://github.com/doxygen/doxygen/releases/download/Release_${version//./_}/doxygen-${version}.linux.bin.tar.gz" | tar -xz
+          echo "$PWD/doxygen-${version}/bin" >> "$GITHUB_PATH"
       - run: make docs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
