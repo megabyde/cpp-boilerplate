@@ -56,6 +56,7 @@ SANITIZE_STAMPS := \
 	$(STAMP_DIR)/sanitize-asan.stamp \
 	$(STAMP_DIR)/sanitize-ubsan.stamp
 FORMAT_SOURCES = $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
+CMAKE_FORMAT_SOURCES = CMakeLists.txt
 TIDY_SOURCES = $(shell find src tests -type f -name '*.cpp')
 
 define require-tool
@@ -172,16 +173,22 @@ lint: $(STAMP_DIR)/debug.stamp ## Run clang-tidy against the debug compilation d
 	PATH="$(PATH)" clang-tidy -p build/debug $(TIDY_SOURCES)
 
 .PHONY: format
-format: ## Format C++ sources in place with clang-format
+format: ## Format C++ and CMake sources in place
 	echo "Formatting C++ sources..."
 	$(call require-tool,clang-format)
 	PATH="$(PATH)" clang-format -i $(FORMAT_SOURCES)
+	echo "Formatting CMake sources..."
+	$(call require-tool,cmake-format)
+	cmake-format -i $(CMAKE_FORMAT_SOURCES)
 
 .PHONY: format-check
-format-check: ## Fail if C++ sources are not clang-format clean
+format-check: ## Fail if C++ or CMake sources are not format-clean
 	echo "Checking C++ formatting..."
 	$(call require-tool,clang-format)
 	PATH="$(PATH)" clang-format --dry-run --Werror $(FORMAT_SOURCES)
+	echo "Checking CMake formatting..."
+	$(call require-tool,cmake-format)
+	cmake-format --check $(CMAKE_FORMAT_SOURCES)
 
 # ---------------------------------------------------------------------------
 # Lock and clean

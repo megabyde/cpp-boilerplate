@@ -172,8 +172,13 @@ if(BUILD_TESTING)
     add_test(NAME AppTest.PrintsHelp COMMAND cpp_boilerplate --help)
     set_tests_properties(AppTest.PrintsHelp PROPERTIES PASS_REGULAR_EXPRESSION "OPTIONS")
 
-    # WILL_FAIL inverts the exit-code check: the test passes because the app exits nonzero on an
-    # unknown argument.
+    # PASS_REGULAR_EXPRESSION (not WILL_FAIL): the CLI11 diagnostic proves the error branch ran and
+    # reported, while an exit-code inversion is also satisfied by a crash. The two properties cannot
+    # combine on one test: the regex verdict replaces the exit-code check, and WILL_FAIL would
+    # invert it into a deterministic failure.
     add_test(NAME AppTest.RejectsUnknownArgument COMMAND cpp_boilerplate --bogus)
-    set_tests_properties(AppTest.RejectsUnknownArgument PROPERTIES WILL_FAIL TRUE)
+    set_tests_properties(
+        AppTest.RejectsUnknownArgument PROPERTIES PASS_REGULAR_EXPRESSION
+                                                  "argument was not expected: --bogus"
+    )
 endif()

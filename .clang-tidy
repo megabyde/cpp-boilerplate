@@ -1,8 +1,7 @@
 FormatStyle: file
-WarningsAsErrors: >
-  bugprone-*,
-  performance-*,
-  -performance-avoid-endl
+# Every enabled check gates the build: clang-tidy exits nonzero only on errors, so
+# anything short of '*' here lets findings print in CI without failing it.
+WarningsAsErrors: '*'
 HeaderFilterRegex: '^(include|src|tests)/'
 
 Checks: >

@@ -18,6 +18,7 @@ env:
   CONAN_VERSION: "2.29.1"
   CLANG_FORMAT_VERSION: "21.1.8"
   CLANG_TIDY_VERSION: "21.1.6"
+  CMAKELANG_VERSION: "0.6.13"
 
 jobs:
   build:
@@ -134,7 +135,8 @@ jobs:
         run: |
           python3 -m pip install --break-system-packages --user \
             clang-format==${{ env.CLANG_FORMAT_VERSION }} \
-            clang-tidy==${{ env.CLANG_TIDY_VERSION }}
+            clang-tidy==${{ env.CLANG_TIDY_VERSION }} \
+            cmakelang==${{ env.CMAKELANG_VERSION }}
       - run: make bootstrap
       - run: make format-check
       - run: make lint
