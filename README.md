@@ -195,6 +195,10 @@ make format-check
 make lint
 ```
 
+`make format` and `make format-check` cover C++ sources (clang-format) and `CMakeLists.txt`
+(cmake-format, from the [cmakelang](https://cmake-format.readthedocs.io) package). `make lint`
+runs clang-tidy against the debug compilation database; every enabled check is an error.
+
 ## Coverage
 
 Build, test, and generate an HTML coverage report with an enforced line floor:
