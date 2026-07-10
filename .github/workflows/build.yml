@@ -13,13 +13,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # Pinned tool versions for reproducible CI. Bump here in one place.
-  CONAN_VERSION: "2.29.1"
-  CLANG_FORMAT_VERSION: "21.1.8"
-  CLANG_TIDY_VERSION: "21.1.6"
-  CMAKELANG_VERSION: "0.6.13"
-
 jobs:
   build:
     name: ${{ matrix.preset }} / ${{ matrix.os }} / ${{ matrix.compiler }}
@@ -41,6 +34,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+      # Tool pins live in .github/ci.env, shared across workflows; loading it into
+      # GITHUB_ENV exposes the pins to every later step's ${{ env.* }}. The anchor
+      # dedupes the step across this file's jobs (anchors are file-scoped, hence
+      # still one step per job). shell: bash is a no-op on Linux/macOS and makes the
+      # alias valid in the Windows job, where the default is pwsh.
+      - &load-ci-env
+        name: Load CI env
+        shell: bash
+        run: cat .github/ci.env >> "$GITHUB_ENV"
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}
@@ -78,6 +80,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+      - *load-ci-env
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}
@@ -102,6 +105,7 @@ jobs:
       CCACHE_MAXSIZE: 200M
     steps:
       - uses: actions/checkout@v7
+      - *load-ci-env
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}
@@ -112,7 +116,7 @@ jobs:
           path: .ccache
           key: ccache-coverage-${{ github.run_id }}
           restore-keys: ccache-coverage-
-      - run: python3 -m pip install --break-system-packages --user gcovr
+      - run: python3 -m pip install --break-system-packages --user gcovr==${{ env.GCOVR_VERSION }}
       - run: make bootstrap
       # Builds, runs the suite, and fails if line coverage drops below the floor.
       - run: make coverage-report
@@ -125,6 +129,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - *load-ci-env
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}

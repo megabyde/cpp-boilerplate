@@ -14,18 +14,16 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  CONAN_VERSION: "2.29.1"
-  # Ubuntu's apt package (1.9.8 on noble) trails upstream by years; install the pinned
-  # release directly instead.
-  DOXYGEN_VERSION: "1.17.0"
-
 jobs:
   build:
     name: doxygen / ubuntu-latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      # Tool pins (CONAN_VERSION, DOXYGEN_VERSION) live in .github/ci.env, shared
+      # across workflows.
+      - name: Load CI env
+        run: cat .github/ci.env >> "$GITHUB_ENV"
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}
