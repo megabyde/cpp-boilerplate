@@ -87,14 +87,17 @@ $(STAMP_DIR)/debug.stamp $(STAMP_DIR)/release.stamp: conan.lock
 $(SANITIZE_STAMPS): $(STAMP_DIR)/%.stamp: conan.lock conan/settings_user.yml profiles/sanitize-common profiles/%
 	echo "Installing Conan dependencies ($*)..."
 	mkdir -p $(STAMP_DIR)
-	# conan config install copies settings_user.yml into the Conan home, which would
-	# silently overwrite a settings_user.yml another project put there. Refuse when a
-	# different one exists; the file is small enough to merge by hand.
+	# conan config install would overwrite a settings_user.yml another project (or the
+	# user's dotfiles) put in the Conan home. Install only when none exists; otherwise
+	# leave the file untouched and require it to cover this project's sanitizer values.
+	# A superset (extra compilers, values, or subsettings) is fine.
+	$(call require-tool,python3)
 	installed="$$(conan config home)/settings_user.yml"; \
-	if [ -f "$$installed" ] && ! cmp -s conan/settings_user.yml "$$installed"; then \
-		$(DIE) "$$installed exists and differs from conan/settings_user.yml.\nMerge conan/settings_user.yml into it by hand (or remove it), then rerun."; \
+	if [ ! -f "$$installed" ]; then \
+		conan config install conan/; \
+	elif ! python3 scripts/check_settings_subset.py conan/settings_user.yml "$$installed"; then \
+		$(DIE) "$$installed lacks sanitizer values this project needs (see above).\nMerge conan/settings_user.yml into it by hand, then rerun."; \
 	fi
-	conan config install conan/
 	conan install . -pr=profiles/$* --build=missing --lockfile=conan.lock
 	touch $@
 

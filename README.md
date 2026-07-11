@@ -21,6 +21,26 @@ This repository uses:
 - [GoogleTest](https://github.com/google/googletest) via Conan
 - [Doxygen](https://www.doxygen.nl) for generated API documentation
 
+## Instantiate this template
+
+After creating your own repository from this
+[template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template),
+rename the project's identifiers with [`scripts/rename.py`](scripts/rename.py) (stdlib only, no
+dependencies):
+
+```console
+python3 scripts/rename.py my-project --github-owner your-github-user
+```
+
+From `my-project` this derives `my_project` (the CMake project/target names, the C++ namespace,
+and the include directory) and `MyProjectConan` (the Conan recipe class), then rewrites every
+occurrence across `CMakeLists.txt`, `conanfile.py`, `cmake/version.hpp.in`, `include/`, `src/`,
+`tests/`, `README.md`, and the CI workflows. Run with `--dry-run` first to preview every change
+without writing anything; add `--title "My Project"` to control the README heading text
+(default: Title Case of the name). The real run also moves `include/cpp_boilerplate/` to
+`include/my_project/` and removes itself and this section, since neither is needed once the
+project has its final name.
+
 ## Operating model
 
 The build is layered, and each layer owns one thing:
@@ -152,7 +172,12 @@ binaries.
 
 `make bootstrap-sanitize` installs that file into your Conan home with
 `conan config install conan/` (the repository's `conan/` directory) before resolving
-dependencies. This is a global Conan
+dependencies, but only when the home has no `settings_user.yml` yet. An existing file
+(for example one your dotfiles manage) is left untouched; it just has to cover the
+sanitizer values this project uses. A superset (extra compilers, values, or other
+subsettings) is fine: [`scripts/check_settings_subset.py`](scripts/check_settings_subset.py)
+verifies this and the build stops with a merge instruction when values are missing.
+This is a global Conan
 side effect: it adds the `compiler.sanitizer` subsetting (default `null`, omitted from
 `package_id`) and does not change non-sanitize builds.
 
@@ -238,6 +263,12 @@ disable with `-DENABLE_HARDENING=OFF` on any configure preset):
   because it requires optimization).
 - MSVC: `/guard:cf` (Control Flow Guard) at compile and link.
 - Other compilers build unhardened rather than failing to configure.
+
+First-party targets build the `release` preset with link-time optimization (LTO) by default
+(`ENABLE_LTO`, default `ON`; disable with `-DENABLE_LTO=OFF`). It applies only to the `Release`
+configuration (CMake's `INTERPROCEDURAL_OPTIMIZATION_RELEASE` property), so `debug`, `sanitize*`,
+and `coverage` builds are unaffected; when the toolchain reports no LTO support, configure logs
+the reason and continues without it rather than failing.
 
 Sanitizer and coverage builds omit hardening: `_FORTIFY_SOURCE` conflicts with the ASan
 interceptors, and coverage builds run at `-O0` where glibc fortification warns. Like the
