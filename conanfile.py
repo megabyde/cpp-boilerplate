@@ -17,12 +17,8 @@ class CppBoilerplateConan(ConanFile):
 
     options = {"with_tests": [True, False]}
 
-    default_options = {
-        "with_tests": True,
-        "spdlog/*:header_only": False,
-        "spdlog/*:shared": False,
-        "spdlog/*:use_std_fmt": False,  # use bundled fmt to exercise the dep graph
-    }
+    # spdlog/* option values live in profiles/default's [options], not here.
+    default_options = {"with_tests": True}
 
     def set_version(self):
         # Single source of truth: parse the version from the CMake project() call so the

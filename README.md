@@ -119,7 +119,7 @@ presets directly from any shell; the Visual Studio generator locates MSVC on its
 so no Developer PowerShell or `vcvarsall` setup is required:
 
 ```console
-conan install . -pr=profiles/default -s build_type=Release --build=missing --lockfile=conan.lock
+conan install . -pr=profiles/default -s="build_type=Release" --build=missing --lockfile=conan.lock
 cmake --workflow --preset release
 ```
 

@@ -81,7 +81,7 @@ $(STAMP_DIR)/release.stamp: BUILD_TYPE = Release
 $(STAMP_DIR)/debug.stamp $(STAMP_DIR)/release.stamp: conan.lock
 	echo "Installing Conan dependencies ($(BUILD_TYPE))..."
 	mkdir -p $(STAMP_DIR)
-	conan install . -pr=$(CONAN_PROFILE) -s build_type=$(BUILD_TYPE) --build=missing --lockfile=conan.lock
+	conan install . -pr=$(CONAN_PROFILE) -s="build_type=$(BUILD_TYPE)" --build=missing --lockfile=conan.lock
 	touch $@
 
 $(SANITIZE_STAMPS): $(STAMP_DIR)/%.stamp: conan.lock conan/settings_user.yml profiles/sanitize-common profiles/%
