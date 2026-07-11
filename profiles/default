@@ -12,6 +12,14 @@ compiler.libcxx={{ detect_api.detect_libcxx(compiler, compiler_version, compiler
 {% endif %}
 build_type=Release
 
+# Dependency option values, not recipe constants (per Conan's guidelines: default_options in
+# a recipe is for the recipe's own options; a dependency's options belong in the profile that
+# consumes it). use_std_fmt=False keeps spdlog on its bundled fmt to exercise the dep graph.
+[options]
+spdlog/*:header_only=False
+spdlog/*:shared=False
+spdlog/*:use_std_fmt=False
+
 # Satisfy the cmake build tool (declared in conanfile.py) from the system CMake instead of
 # downloading the Conan package. Everyone building this project already has CMake on PATH for
 # `cmake --workflow`, so this avoids a redundant download. The version is the project's
