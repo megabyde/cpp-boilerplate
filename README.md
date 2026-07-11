@@ -239,6 +239,12 @@ disable with `-DENABLE_HARDENING=OFF` on any configure preset):
 - MSVC: `/guard:cf` (Control Flow Guard) at compile and link.
 - Other compilers build unhardened rather than failing to configure.
 
+First-party targets build the `release` preset with link-time optimization (LTO) by default
+(`ENABLE_LTO`, default `ON`; disable with `-DENABLE_LTO=OFF`). It applies only to the `Release`
+configuration (CMake's `INTERPROCEDURAL_OPTIMIZATION_RELEASE` property), so `debug`, `sanitize*`,
+and `coverage` builds are unaffected; when the toolchain reports no LTO support, configure logs
+the reason and continues without it rather than failing.
+
 Sanitizer and coverage builds omit hardening: `_FORTIFY_SOURCE` conflicts with the ASan
 interceptors, and coverage builds run at `-O0` where glibc fortification warns. Like the
 warning options, hardening covers first-party code only; dependency binaries from the Conan

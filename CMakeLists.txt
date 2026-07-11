@@ -21,6 +21,15 @@ set(CMAKE_COLOR_DIAGNOSTICS
 option(WARNINGS_AS_ERRORS "Treat warnings as errors" ON)
 option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
 option(ENABLE_HARDENING "Enable hardening compile and link flags" ON)
+option(ENABLE_LTO "Enable link-time optimization for Release builds" ON)
+
+include(CheckIPOSupported)
+if(ENABLE_LTO)
+    check_ipo_supported(RESULT LTO_SUPPORTED OUTPUT LTO_UNSUPPORTED_REASON)
+    if(NOT LTO_SUPPORTED)
+        message(STATUS "LTO not supported by this toolchain: ${LTO_UNSUPPORTED_REASON}")
+    endif()
+endif()
 
 if(CMAKE_EXPORT_COMPILE_COMMANDS
    AND CMAKE_GENERATOR MATCHES "Ninja|Makefiles"
@@ -83,10 +92,19 @@ function(enable_hardening target)
     # Other compilers fall through and build unhardened.
 endfunction()
 
+function(enable_lto target)
+    # The _RELEASE suffix scopes this to the Release config under any generator, single- or
+    # multi-config alike.
+    if(ENABLE_LTO AND LTO_SUPPORTED)
+        set_target_properties(${target} PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+    endif()
+endfunction()
+
 function(enable_project_options target)
     enable_project_warnings(${target})
     enable_coverage(${target})
     enable_hardening(${target})
+    enable_lto(${target})
 endfunction()
 
 # --- library ---------------------------------------------------------------
