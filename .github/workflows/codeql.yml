@@ -20,11 +20,11 @@ jobs:
       contents: read
       packages: read
       security-events: write
-    env:
-      CONAN_VERSION: "2.29.1"
-
     steps:
       - uses: actions/checkout@v7
+      # Tool pins live in .github/ci.env, shared across workflows.
+      - name: Load CI env
+        run: cat .github/ci.env >> "$GITHUB_ENV"
       - uses: github/codeql-action/init@v4
         with:
           languages: c-cpp
