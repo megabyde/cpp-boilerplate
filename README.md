@@ -21,6 +21,26 @@ This repository uses:
 - [GoogleTest](https://github.com/google/googletest) via Conan
 - [Doxygen](https://www.doxygen.nl) for generated API documentation
 
+## Instantiate this template
+
+After creating your own repository from this
+[template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template),
+rename the project's identifiers with [`scripts/rename.py`](scripts/rename.py) (stdlib only, no
+dependencies):
+
+```console
+python3 scripts/rename.py my-project --github-owner your-github-user
+```
+
+From `my-project` this derives `my_project` (the CMake project/target names, the C++ namespace,
+and the include directory) and `MyProjectConan` (the Conan recipe class), then rewrites every
+occurrence across `CMakeLists.txt`, `conanfile.py`, `cmake/version.hpp.in`, `include/`, `src/`,
+`tests/`, `README.md`, and the CI workflows. Run with `--dry-run` first to preview every change
+without writing anything; add `--title "My Project"` to control the README heading text
+(default: Title Case of the name). The real run also moves `include/cpp_boilerplate/` to
+`include/my_project/` and removes itself and this section, since neither is needed once the
+project has its final name.
+
 ## Operating model
 
 The build is layered, and each layer owns one thing:
