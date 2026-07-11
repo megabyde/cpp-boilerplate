@@ -152,7 +152,12 @@ binaries.
 
 `make bootstrap-sanitize` installs that file into your Conan home with
 `conan config install conan/` (the repository's `conan/` directory) before resolving
-dependencies. This is a global Conan
+dependencies, but only when the home has no `settings_user.yml` yet. An existing file
+(for example one your dotfiles manage) is left untouched; it just has to cover the
+sanitizer values this project uses. A superset (extra compilers, values, or other
+subsettings) is fine: [`scripts/check_settings_subset.py`](scripts/check_settings_subset.py)
+verifies this and the build stops with a merge instruction when values are missing.
+This is a global Conan
 side effect: it adds the `compiler.sanitizer` subsetting (default `null`, omitted from
 `package_id`) and does not change non-sanitize builds.
 
