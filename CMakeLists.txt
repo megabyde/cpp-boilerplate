@@ -31,6 +31,16 @@ if(ENABLE_LTO)
     endif()
 endif()
 
+include(CheckPIESupported)
+if(ENABLE_HARDENING)
+    # Without a passing check, POSITION_INDEPENDENT_CODE only adds the compile flag (-fPIE) and
+    # CMake silently drops the -pie link flag, leaving the executable non-PIE.
+    check_pie_supported(OUTPUT_VARIABLE PIE_UNSUPPORTED_REASON LANGUAGES CXX)
+    if(NOT CMAKE_CXX_LINK_PIE_SUPPORTED)
+        message(STATUS "PIE link flags not supported: ${PIE_UNSUPPORTED_REASON}")
+    endif()
+endif()
+
 if(CMAKE_EXPORT_COMPILE_COMMANDS
    AND CMAKE_GENERATOR MATCHES "Ninja|Makefiles"
    AND NOT CMAKE_BINARY_DIR STREQUAL PROJECT_SOURCE_DIR
@@ -79,6 +89,11 @@ function(enable_hardening target)
         # Control Flow Guard needs both compile and link; /GS is on by default.
         target_compile_options(${target} PRIVATE /guard:cf)
         target_link_options(${target} PRIVATE /guard:cf)
+        # CET shadow stack, a link-time marker the OS honors on capable hardware and ignores
+        # elsewhere. x64 only: the linker rejects the flag for ARM64 targets.
+        if(CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64")
+            target_link_options(${target} PRIVATE /CETCOMPAT)
+        endif()
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
         # Stack protector always; fortified libc calls only in optimized configs (fortify needs
         # optimization, so Debug skips it). -U first: Ubuntu's gcc predefines _FORTIFY_SOURCE when
@@ -88,6 +103,28 @@ function(enable_hardening target)
             ${target} PRIVATE -fstack-protector-strong
                               $<$<NOT:$<CONFIG:Debug>>:-U_FORTIFY_SOURCE;-D_FORTIFY_SOURCE=2>
         )
+        # Control-flow protection per architecture: CET landing pads (endbr64) on x86-64, PAC
+        # return-address signing plus BTI on AArch64. Both encode as NOPs on hardware without the
+        # feature. AArch64 is Linux-only: on macOS arm64 the compact-unwind format cannot describe
+        # pac-ret frames, so a thrown exception skips every catch and terminates (Apple reserves
+        # pointer auth for its arm64e ABI, which signs OS-wide without this flag).
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
+            target_compile_options(${target} PRIVATE -fcf-protection=full)
+        elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$" AND CMAKE_SYSTEM_NAME STREQUAL
+                                                                      "Linux"
+        )
+            target_compile_options(${target} PRIVATE -mbranch-protection=standard)
+        endif()
+        # PIE makes ASLR cover the program image itself, not just libraries. Applied to the static
+        # library too so its objects compile as -fPIE and can link into the PIE executable. The
+        # link-side -pie needs the check_pie_supported() call above.
+        set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+        # ELF linker mitigations: full RELRO (GOT read-only after eager binding) and an explicitly
+        # non-executable stack. Linux-gated because macOS's ld64 has no -z options; Mach-O images
+        # get the equivalent protections by default.
+        if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+            target_link_options(${target} PRIVATE -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack)
+        endif()
     endif()
     # Other compilers fall through and build unhardened.
 endfunction()
