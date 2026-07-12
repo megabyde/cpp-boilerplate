@@ -58,6 +58,11 @@ SANITIZE_STAMPS := \
 FORMAT_SOURCES = $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
 CMAKE_FORMAT_SOURCES = CMakeLists.txt
 TIDY_SOURCES = $(shell find src tests -type f -name '*.cpp')
+# Tracked Markdown/JSON/YAML only; conan.lock is Conan-generated, so its formatting is
+# Conan's, not prettier's.
+PRETTIER_SOURCES = $(shell git ls-files '*.md' '*.json' '*.yml' '*.yaml' ':!conan.lock')
+MARKDOWN_SOURCES = $(shell git ls-files '*.md')
+PYTHON_SOURCES = scripts/
 
 define require-tool
 	command -v $(1) >/dev/null || $(DIE) "$(1) not found"
@@ -170,28 +175,46 @@ coverage-report: coverage ## Generate an HTML coverage report and enforce the li
 # Lint and format
 # ---------------------------------------------------------------------------
 .PHONY: lint
-lint: $(STAMP_DIR)/debug.stamp ## Run clang-tidy against the debug compilation database
+lint: $(STAMP_DIR)/debug.stamp ## Run clang-tidy, ruff, and markdownlint
 	$(call require-tool,clang-tidy)
 	cmake --preset debug
 	PATH="$(PATH)" clang-tidy -p build/debug $(TIDY_SOURCES)
+	echo "Linting Python sources..."
+	$(call require-tool,ruff)
+	ruff check $(PYTHON_SOURCES)
+	echo "Linting Markdown sources..."
+	$(call require-tool,markdownlint-cli2)
+	markdownlint-cli2 $(MARKDOWN_SOURCES)
 
 .PHONY: format
-format: ## Format C++ and CMake sources in place
+format: ## Format C++, CMake, Python, and Markdown/JSON/YAML sources in place
 	echo "Formatting C++ sources..."
 	$(call require-tool,clang-format)
 	PATH="$(PATH)" clang-format -i $(FORMAT_SOURCES)
 	echo "Formatting CMake sources..."
 	$(call require-tool,cmake-format)
 	cmake-format -i $(CMAKE_FORMAT_SOURCES)
+	echo "Formatting Python sources..."
+	$(call require-tool,ruff)
+	ruff format $(PYTHON_SOURCES)
+	echo "Formatting Markdown/JSON/YAML sources..."
+	$(call require-tool,prettier)
+	prettier --log-level warn --write $(PRETTIER_SOURCES)
 
 .PHONY: format-check
-format-check: ## Fail if C++ or CMake sources are not format-clean
+format-check: ## Fail if any formatted source type is not format-clean
 	echo "Checking C++ formatting..."
 	$(call require-tool,clang-format)
 	PATH="$(PATH)" clang-format --dry-run --Werror $(FORMAT_SOURCES)
 	echo "Checking CMake formatting..."
 	$(call require-tool,cmake-format)
 	cmake-format --check $(CMAKE_FORMAT_SOURCES)
+	echo "Checking Python formatting..."
+	$(call require-tool,ruff)
+	ruff format --check $(PYTHON_SOURCES)
+	echo "Checking Markdown/JSON/YAML formatting..."
+	$(call require-tool,prettier)
+	prettier --check $(PRETTIER_SOURCES)
 
 # ---------------------------------------------------------------------------
 # Lock and clean

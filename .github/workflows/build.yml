@@ -141,7 +141,11 @@ jobs:
           python3 -m pip install --break-system-packages --user \
             clang-format==${{ env.CLANG_FORMAT_VERSION }} \
             clang-tidy==${{ env.CLANG_TIDY_VERSION }} \
-            cmakelang==${{ env.CMAKELANG_VERSION }}
+            cmakelang==${{ env.CMAKELANG_VERSION }} \
+            ruff==${{ env.RUFF_VERSION }}
+          npm install -g \
+            prettier@${{ env.PRETTIER_VERSION }} \
+            markdownlint-cli2@${{ env.MARKDOWNLINT_CLI2_VERSION }}
       - run: make bootstrap
       - run: make format-check
       - run: make lint
