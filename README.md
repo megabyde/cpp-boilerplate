@@ -66,13 +66,13 @@ stable across toolchain changes.
 
 ```text
 .
-|-- include/                 public headers
-|-- src/                     application sources
-|-- tests/                   unit tests
-|-- conanfile.py             Conan dependency definition
-|-- conan/settings_user.yml  custom sanitizer setting
-|-- profiles/                default and sanitizer Conan profiles
-`-- CMakePresets.json        project-owned public presets
+├── include/                 public headers
+├── src/                     application sources
+├── tests/                   unit tests
+├── conanfile.py             Conan dependency definition
+├── conan/settings_user.yml  custom sanitizer setting
+├── profiles/                default and sanitizer Conan profiles
+└── CMakePresets.json        project-owned public presets
 ```
 
 ## Prerequisites
@@ -258,10 +258,15 @@ in CI. Relax it for a single build tree with `cmake --preset <name> -DWARNINGS_A
 First-party targets also build with hardening flags by default (`ENABLE_HARDENING`, default `ON`;
 disable with `-DENABLE_HARDENING=OFF` on any configure preset):
 
-- GCC/Clang/AppleClang: `-fstack-protector-strong` in every configuration; optimized
-  configurations add `-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2` (Debug skips fortification
-  because it requires optimization).
-- MSVC: `/guard:cf` (Control Flow Guard) at compile and link.
+- GCC/Clang/AppleClang: `-fstack-protector-strong` and architecture-matched control-flow
+  protection (`-fcf-protection=full` on x86-64; `-mbranch-protection=standard` on AArch64,
+  Linux only, because pac-ret frames break exception unwinding under macOS's compact-unwind
+  format) in every configuration; optimized configurations add
+  `-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2` (Debug skips fortification because it requires
+  optimization). Executables link as PIE so ASLR covers the program image, and on Linux the
+  linker adds full RELRO (`-z relro -z now`) and an explicitly non-executable stack.
+- MSVC: `/guard:cf` (Control Flow Guard) at compile and link; x64 also links with
+  `/CETCOMPAT` (CET shadow stack).
 - Other compilers build unhardened rather than failing to configure.
 
 First-party targets build the `release` preset with link-time optimization (LTO) by default
@@ -270,8 +275,9 @@ configuration (CMake's `INTERPROCEDURAL_OPTIMIZATION_RELEASE` property), so `deb
 and `coverage` builds are unaffected; when the toolchain reports no LTO support, configure logs
 the reason and continues without it rather than failing.
 
-Sanitizer and coverage builds omit hardening: `_FORTIFY_SOURCE` conflicts with the ASan
-interceptors, and coverage builds run at `-O0` where glibc fortification warns. Like the
+Sanitizer and coverage builds omit fortification (they build as Debug, which never defines
+`_FORTIFY_SOURCE`): fortify conflicts with the ASan interceptors, and coverage builds run at
+`-O0` where glibc fortification warns. The other hardening flags stay on. Like the
 warning options, hardening covers first-party code only; dependency binaries from the Conan
 cache are not rebuilt with these flags.
 
