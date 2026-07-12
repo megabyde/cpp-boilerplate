@@ -78,7 +78,7 @@ class CppBoilerplateConan(ConanFile):
     def generate(self):
         # CMakeConfigDeps generates CMake CONFIG-mode find_package files under the build
         # dir. It is experimental in Conan 2.x (it prints a warning and its behavior may
-        # change); we use it to exercise the modern generator. Switch to the stable
+        # change); we use it to exercise the newer generator. Switch to the stable
         # CMakeDeps if you need a settled interface.
         deps = CMakeConfigDeps(self)
         deps.generate()
