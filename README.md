@@ -9,7 +9,7 @@
 
 ## Overview
 
-A modern C++23 project template demonstrating end-to-end toolchain integration: Conan 2.25+
+A C++23 project template demonstrating end-to-end toolchain integration: Conan 2.25+
 dependency management, CMake presets, testing, sanitizers, coverage, CI, and IDE setup.
 
 This repository uses:

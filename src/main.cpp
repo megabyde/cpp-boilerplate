@@ -31,7 +31,7 @@ void run()
 // NOLINTNEXTLINE(bugprone-exception-escape)
 int main(int argc, char* argv[])
 {
-    CLI::App app{"Modern C++23 project template demo"};
+    CLI::App app{"C++23 project template demo"};
     app.set_version_flag("--version", std::string{cpp_boilerplate::version});
 
     try {

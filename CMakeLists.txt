@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.25)
 project(
     cpp_boilerplate
     VERSION 0.1.0
-    DESCRIPTION "Modern C++23 project template with Conan and CMake"
+    DESCRIPTION "C++23 project template with Conan and CMake"
     LANGUAGES CXX
 )
 
