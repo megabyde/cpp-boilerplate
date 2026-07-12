@@ -1,6 +1,7 @@
 # C++ Boilerplate
 
 [![Build](https://github.com/megabyde/cpp-boilerplate/actions/workflows/build.yml/badge.svg)](https://github.com/megabyde/cpp-boilerplate/actions/workflows/build.yml)
+[![CodeQL](https://github.com/megabyde/cpp-boilerplate/actions/workflows/codeql.yml/badge.svg)](https://github.com/megabyde/cpp-boilerplate/actions/workflows/codeql.yml)
 [![Pages](https://github.com/megabyde/cpp-boilerplate/actions/workflows/pages.yml/badge.svg)](https://github.com/megabyde/cpp-boilerplate/actions/workflows/pages.yml)
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)](https://en.cppreference.com/w/cpp/23)
 [![CMake](https://img.shields.io/badge/CMake-3.25%2B-064F8C.svg)](https://cmake.org)
