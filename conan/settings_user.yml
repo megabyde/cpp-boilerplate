@@ -12,9 +12,9 @@
 # sanitize-ubsan, AddressUndefinedBehavior -> sanitize. To support another (e.g. Thread),
 # add its value here and a matching profile.
 compiler:
-    apple-clang:
-        sanitizer: [null, Address, UndefinedBehavior, AddressUndefinedBehavior]
-    clang:
-        sanitizer: [null, Address, UndefinedBehavior, AddressUndefinedBehavior]
-    gcc:
-        sanitizer: [null, Address, UndefinedBehavior, AddressUndefinedBehavior]
+  apple-clang:
+    sanitizer: [null, Address, UndefinedBehavior, AddressUndefinedBehavior]
+  clang:
+    sanitizer: [null, Address, UndefinedBehavior, AddressUndefinedBehavior]
+  gcc:
+    sanitizer: [null, Address, UndefinedBehavior, AddressUndefinedBehavior]

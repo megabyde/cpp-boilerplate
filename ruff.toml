@@ -1,0 +1,3 @@
+# 100 columns, matching the repo-wide convention (.clang-format, .cmake-format.yaml, and
+# .editorconfig/markdownlint all use 100); ruff's default is 88.
+line-length = 100
