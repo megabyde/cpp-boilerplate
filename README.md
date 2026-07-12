@@ -66,13 +66,13 @@ stable across toolchain changes.
 
 ```text
 .
-|-- include/                 public headers
-|-- src/                     application sources
-|-- tests/                   unit tests
-|-- conanfile.py             Conan dependency definition
-|-- conan/settings_user.yml  custom sanitizer setting
-|-- profiles/                default and sanitizer Conan profiles
-`-- CMakePresets.json        project-owned public presets
+├── include/                 public headers
+├── src/                     application sources
+├── tests/                   unit tests
+├── conanfile.py             Conan dependency definition
+├── conan/settings_user.yml  custom sanitizer setting
+├── profiles/                default and sanitizer Conan profiles
+└── CMakePresets.json        project-owned public presets
 ```
 
 ## Prerequisites
