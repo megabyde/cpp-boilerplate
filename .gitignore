@@ -2,6 +2,7 @@ build/
 cmake-build-*/
 .cache/
 .idea/
+.ruff_cache/
 ConanPresets.json
 .vscode/.cmaketools.json
 compile_commands.json
