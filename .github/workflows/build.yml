@@ -95,6 +95,41 @@ jobs:
           cmake --install build\release --prefix "%RUNNER_TEMP%\install" || exit /b 1
           "%RUNNER_TEMP%\install\bin\cpp_boilerplate.exe" || exit /b 1
 
+  # The template's first-use path: a real (non-dry-run) rename, then a build and test of the
+  # renamed project. A new user's first action is running rename.py, so this failing silently
+  # is worse than any code bug; no other job exercises it.
+  rename:
+    name: rename / ubuntu-latest / gcc
+    runs-on: ubuntu-latest
+    env:
+      CC: gcc
+      CXX: g++
+    steps:
+      - uses: actions/checkout@v7
+      - *load-ci-env
+      - uses: conan-io/setup-conan@v1
+        with:
+          version: ${{ env.CONAN_VERSION }}
+          cache_packages: true
+      - name: Rename the template
+        run: |
+          python3 scripts/rename.py ci-smoke --github-owner tester
+          # The bracketed characters keep these patterns from matching themselves: rename.py
+          # rewrites every tracked file including this one, and a literal cpp_boilerplate here
+          # would be renamed into the new name, turning the check into a self-fulfilling match.
+          if grep -rIniE 'cpp[_-]?boilerplate|mega[b]yde' --exclude-dir=.git .; then
+            echo "template identifiers survived the rename"
+            exit 1
+          fi
+      - name: Build and test the renamed project
+        run: |
+          conan install . -pr=profiles/default -s="build_type=Debug" --build=missing --lockfile=conan.lock
+          cmake --workflow --preset debug
+      # The startup line interpolates a rewritten string in main.cpp, so this verifies the
+      # rename reached the runtime output, not just identifiers and filenames.
+      - name: Run the renamed binary
+        run: ./build/debug/ci_smoke | grep -E 'ci-smoke [0-9.]+ starting'
+
   coverage:
     name: coverage / ubuntu-latest / gcc
     runs-on: ubuntu-latest
