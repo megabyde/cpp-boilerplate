@@ -125,6 +125,10 @@ jobs:
         run: |
           conan install . -pr=profiles/default -s="build_type=Debug" --build=missing --lockfile=conan.lock
           cmake --workflow --preset debug
+      # The startup line interpolates a rewritten string in main.cpp, so this verifies the
+      # rename reached the runtime output, not just identifiers and filenames.
+      - name: Run the renamed binary
+        run: ./build/debug/ci_smoke | grep -E 'ci-smoke [0-9.]+ starting'
 
   coverage:
     name: coverage / ubuntu-latest / gcc
