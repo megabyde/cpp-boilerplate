@@ -1,5 +1,5 @@
-# 3.25 is the minimum required by this template: workflow presets and CMakePresets
-# schema v6 (3.25), COMPILE_WARNING_AS_ERROR (3.24), cxx_std_23 (3.20).
+# 3.25 is the minimum required by this template: workflow presets and CMakePresets schema v6 (3.25),
+# COMPILE_WARNING_AS_ERROR (3.24), cxx_std_23 (3.20).
 cmake_minimum_required(VERSION 3.25)
 
 project(
