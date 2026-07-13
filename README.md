@@ -10,8 +10,8 @@
 
 ## Overview
 
-A C++23 project template demonstrating end-to-end toolchain integration: Conan 2.25+ dependency
-management, CMake presets, testing, sanitizers, coverage, CI, and IDE setup.
+A C++23 project template with Conan 2.25+ dependency management, CMake presets, testing, sanitizers,
+coverage, CI, and IDE setup.
 
 This repository uses:
 
@@ -26,20 +26,20 @@ This repository uses:
 
 After creating your own repository from this
 [template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template),
-rename the project's identifiers with [`scripts/rename.py`](scripts/rename.py) (stdlib only, no
-dependencies):
+rename the project with [`scripts/rename.py`](scripts/rename.py). The script uses only the Python
+standard library:
 
 ```console
 python3 scripts/rename.py my-project --github-owner your-github-user
 ```
 
-From `my-project` this derives `my_project` (the CMake project/target names, the C++ namespace, and
-the include directory) and `MyProjectConan` (the Conan recipe class), then rewrites every occurrence
-across `CMakeLists.txt`, `conanfile.py`, `cmake/version.hpp.in`, `include/`, `src/`, `tests/`,
-`README.md`, and the CI workflows. Run with `--dry-run` first to preview every change without
-writing anything; add `--title "My Project"` to control the README heading text (default: Title Case
-of the name). The real run also moves `include/cpp_boilerplate/` to `include/my_project/` and
-removes itself and this section, since neither is needed once the project has its final name.
+From `my-project`, the script derives `my_project` for CMake targets, the C++ namespace, and the
+include directory. It derives `MyProjectConan` for the Conan recipe class. It then updates the
+tracked project files, moves `include/cpp_boilerplate/` to `include/my_project/`, and removes both
+the script and this section.
+
+Run with `--dry-run` first to preview every change. Use `--title "My Project"` to override the
+README heading; the default is the project name in title case.
 
 ## Operating model
 
@@ -89,7 +89,7 @@ stable across toolchain changes.
   - [Apple Clang](https://developer.apple.com/xcode/) 17+ recommended
   - [MSVC](https://visualstudio.microsoft.com/) 2022 (17.10+) on Windows
 
-Conan chooses the CMake generator for you:
+The Conan recipe selects the CMake generator:
 
 - `Ninja` on Unix-like systems when it is available
 - `Unix Makefiles` on Unix-like systems when `ninja` is not installed
@@ -105,7 +105,7 @@ This boilerplate supports Linux, macOS, and Windows.
 ```console
 git clone https://github.com/megabyde/cpp-boilerplate.git
 cd cpp-boilerplate
-make bootstrap  # generates ConanPresets.json
+make bootstrap  # generate ConanPresets.json
 make debug
 ```
 
@@ -141,10 +141,10 @@ after the build type and `compiler.sanitizer` setting) and a Conan sanitize prof
 are rebuilt with matching instrumentation, not linked from their plain (uninstrumented) Debug
 binaries.
 
-Three modes are provided, showcasing Conan profile inheritance. Each mode profile inherits a shared
-base, [`profiles/sanitize-common`](profiles/sanitize-common) (which pulls in `profiles/default`,
-sets `Debug`, and carries the common instrumentation flags and `[runenv]`), and appends its own
-`-fsanitize` flags:
+The three modes use Conan profile inheritance. Each mode inherits
+[`profiles/sanitize-common`](profiles/sanitize-common), which includes `profiles/default`, selects
+`Debug`, and defines the common instrumentation flags and `[runenv]`. The mode profile then appends
+its own `-fsanitize` flags:
 
 - `sanitize`: combined ASan + UBSan ([`profiles/sanitize`](profiles/sanitize)); driven by
   `make sanitize` and CI.
@@ -175,9 +175,9 @@ would silently reuse the uninstrumented Debug binaries.
 `settings_user.yml` yet. An existing file (for example one your dotfiles manage) is left untouched;
 it just has to cover the sanitizer values this project uses. A superset (extra compilers, values, or
 other subsettings) is fine: [`scripts/check_settings_subset.py`](scripts/check_settings_subset.py)
-verifies this and the build stops with a merge instruction when values are missing. This is a global
-Conan side effect: it adds the `compiler.sanitizer` subsetting (default `null`, omitted from
-`package_id`) and does not change non-sanitize builds.
+verifies this and the build stops with a merge instruction when values are missing. Installing the
+file changes the global Conan configuration: it adds the `compiler.sanitizer` subsetting. Its
+default is `null`, which is omitted from `package_id`, so non-sanitize builds do not change.
 
 The default `make bootstrap` does not install sanitizer-instrumented dependencies. Run
 `make bootstrap-sanitize` or the matching `make sanitize*` target when you need them.

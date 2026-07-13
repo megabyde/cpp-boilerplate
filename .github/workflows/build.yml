@@ -49,9 +49,8 @@ jobs:
           cache_packages: true
       - name: Install ccache
         run: ${{ runner.os == 'macOS' && 'brew install ccache' || 'sudo apt-get install -y ccache' }}
-      # Rolling cache key: actions/cache saves only on an exact-key miss, so the run_id
-      # suffix makes every run save an updated cache while restore-keys warm-starts
-      # from the newest previous one.
+      # actions/cache saves only after an exact-key miss. The run_id suffix therefore saves an
+      # updated cache after every run, while restore-keys starts from the newest previous cache.
       - uses: actions/cache@v6
         with:
           path: .ccache
@@ -95,9 +94,8 @@ jobs:
           cmake --install build\release --prefix "%RUNNER_TEMP%\install" || exit /b 1
           "%RUNNER_TEMP%\install\bin\cpp_boilerplate.exe" || exit /b 1
 
-  # The template's first-use path: a real (non-dry-run) rename, then a build and test of the
-  # renamed project. A new user's first action is running rename.py, so this failing silently
-  # is worse than any code bug; no other job exercises it.
+  # Exercise the template's first-use path: perform a real rename, then build and test the renamed
+  # project. No other job runs rename.py.
   rename:
     name: rename / ubuntu-latest / gcc
     runs-on: ubuntu-latest
