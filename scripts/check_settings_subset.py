@@ -3,14 +3,13 @@
 
 Usage: check_settings_subset.py <required.yml> <installed.yml>
 
-Exits 0 when, for every compiler in the required file, the installed file lists every
-required sanitizer value. The installed file may be a superset: extra compilers, extra
-sanitizer values, or unrelated subsettings (e.g. version:) are fine and left alone.
+Exits 0 when the installed file lists every required sanitizer value for every required compiler.
+The installed file may contain extra compilers, sanitizer values, or unrelated subsettings such as
+version:.
 
-Parsing is deliberately limited to the two-level shape Conan documents for
-settings_user.yml (stdlib only; PyYAML is not available everywhere this runs). Anything
-that does not parse counts as not covering the requirement, so the failure mode is the
-safe one: the caller asks the user to merge by hand.
+Parsing is limited to Conan's documented two-level settings_user.yml structure. The script uses the
+standard library because PyYAML is not available in every environment where it runs. Unrecognized
+input fails the subset check and requires a manual merge.
 """
 
 import re

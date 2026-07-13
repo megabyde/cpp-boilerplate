@@ -27,18 +27,17 @@ class CppBoilerplateConan(ConanFile):
         self.version = re.search(r"project\([^)]*VERSION\s+([\d.]+)", cmakelists).group(1)
 
     def requirements(self):
-        # The method form (over the `requires` attribute) is what lets requirements be
-        # conditional, e.g. platform-specific extras:
+        # The method form, unlike the `requires` attribute, permits conditional requirements such
+        # as platform-specific dependencies:
         #   if self.settings.os == "Windows":
         #       self.requires("...")
         self.requires("spdlog/1.17.0")
         self.requires("cli11/2.6.2")
 
     def validate(self):
-        # Require C++23 at the standard level (catches a profile pinning an older
-        # compiler.cppstd). An actually-too-old compiler is rejected by CMake's
-        # cxx_std_23 feature requirement at configure time, so we deliberately do not
-        # duplicate a compiler-version table here; the README documents the minimums.
+        # Reject profiles that select compiler.cppstd below C++23. CMake's cxx_std_23 feature
+        # requirement rejects an older compiler during configuration, so the recipe does not
+        # duplicate the compiler-version table documented in the README.
         check_min_cppstd(self, 23)
 
     def _cmake_generator(self):

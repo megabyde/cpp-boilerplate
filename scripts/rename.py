@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-"""Rename this template's project identifiers to a new project name.
+"""Rename this template for a new project.
 
-Rewrites every occurrence of the template's name (the CMake project/target names, the
-`cpp_boilerplate` namespace and include directory, the Conan recipe name and class, and the
-README title and GitHub URLs) across every git-tracked file, derived from one name given in
-any common casing (kebab-case, snake_case, PascalCase, or plain lowercase). Run with
---dry-run first to preview the changes; the real run also moves the include directory and
-removes this script and the README section that documents it, since neither is needed once a
-project has its final name.
+Derives kebab-case, snake_case, and PascalCase identifiers from a name in any common casing.
+Rewrites the tracked project files, moves the include directory, then removes this script and its
+README section. Use --dry-run to preview the changes first.
 
 conan.lock needs no regeneration: the project name lives in conanfile.py/CMakeLists.txt, not
 in the lock file's dependency graph.
@@ -78,8 +74,7 @@ def build_replacements(
 
 
 def apply_replacements(text: str, replacements: list[tuple[str, str]]) -> tuple[str, int]:
-    """Apply every (old, new) pair to text; the returned count is total occurrences replaced,
-    not the number of pairs that matched."""
+    """Apply every (old, new) pair and return the number of replaced occurrences."""
     count = 0
     for old, new in replacements:
         occurrences = text.count(old)
@@ -125,9 +120,9 @@ def main() -> int:
         if path == script_path:
             continue
         try:
-            # UnicodeDecodeError: not UTF-8 text, e.g. a binary asset; nothing to rewrite.
-            # OSError: e.g. a path git reports but that no longer exists on disk (a
-            # submodule gitlink, a race with a concurrent edit); same outcome, skip it.
+            # UnicodeDecodeError means the file is not UTF-8 text, for example a binary asset.
+            # OSError means a tracked path no longer exists, for example a submodule gitlink or a
+            # concurrent edit. Neither case contains text this script can rewrite.
             text = path.read_text()
         except (UnicodeDecodeError, OSError):
             continue

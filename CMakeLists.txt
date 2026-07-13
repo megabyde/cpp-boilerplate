@@ -1,4 +1,4 @@
-# 3.25 is the floor bound by the features this template uses: workflow presets and CMakePresets
+# 3.25 is the minimum required by this template: workflow presets and CMakePresets
 # schema v6 (3.25), COMPILE_WARNING_AS_ERROR (3.24), cxx_std_23 (3.20).
 cmake_minimum_required(VERSION 3.25)
 
@@ -33,7 +33,7 @@ endif()
 
 include(CheckPIESupported)
 if(ENABLE_HARDENING)
-    # Without a passing check, POSITION_INDEPENDENT_CODE only adds the compile flag (-fPIE) and
+    # Without a successful check, POSITION_INDEPENDENT_CODE only adds the compile flag (-fPIE) and
     # CMake silently drops the -pie link flag, leaving the executable non-PIE.
     check_pie_supported(OUTPUT_VARIABLE PIE_UNSUPPORTED_REASON LANGUAGES CXX)
     if(NOT CMAKE_CXX_LINK_PIE_SUPPORTED)
@@ -86,7 +86,7 @@ function(enable_hardening target)
     endif()
 
     if(MSVC)
-        # Control Flow Guard needs both compile and link; /GS is on by default.
+        # Control Flow Guard requires both compile and link flags; /GS is on by default.
         target_compile_options(${target} PRIVATE /guard:cf)
         target_link_options(${target} PRIVATE /guard:cf)
         # CET shadow stack, a link-time marker the OS honors on capable hardware and ignores
@@ -187,8 +187,8 @@ if(Doxygen_FOUND)
     set(DOXYGEN_USE_MDFILE_AS_MAINPAGE ${PROJECT_SOURCE_DIR}/README.md)
     set(DOXYGEN_WARN_AS_ERROR YES)
 
-    # LICENSE is also listed as an input (not just HTML_EXTRA_FILES) so editing it invalidates the
-    # docs target and it shows up in the source browser.
+    # LICENSE is also an input, not just an HTML_EXTRA_FILES entry. Editing it then invalidates the
+    # docs target, and Doxygen includes it in the source browser.
     doxygen_add_docs(
         docs ${PROJECT_SOURCE_DIR}/README.md ${PROJECT_SOURCE_DIR}/LICENSE
         ${PROJECT_SOURCE_DIR}/include

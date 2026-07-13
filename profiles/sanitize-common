@@ -12,7 +12,7 @@ build_type=Debug
 tools.build:cflags=["-fno-omit-frame-pointer", "-fno-sanitize-recover=all"]
 tools.build:cxxflags=["-fno-omit-frame-pointer", "-fno-sanitize-recover=all"]
 
-# Sanitizer runtime options, and the single source of truth for them. Conan injects [runenv]
+# Sanitizer runtime options use this profile as their single source of truth. Conan injects [runenv]
 # into the generated conan-debug-<sanitizer> CMake test presets (and conanrun env scripts);
 # the public sanitize* test presets in CMakePresets.json inherit those, so `ctest`/`cmake
 # --workflow` runs the instrumented tests with these options. ASAN_OPTIONS is ignored by a

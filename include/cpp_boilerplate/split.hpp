@@ -18,7 +18,7 @@ namespace cpp_boilerplate {
            });
 }
 
-/// Split a string view into an owning vector of field views.
+/// Materialize the split fields in a vector.
 ///
 /// The returned field views still alias the storage backing `record`.
 [[nodiscard]] std::vector<std::string_view> split_views_vec(std::string_view record,
