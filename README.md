@@ -10,8 +10,8 @@
 
 ## Overview
 
-A C++23 project template with Conan 2.25+ dependency management, CMake presets, testing,
-sanitizers, coverage, CI, and IDE setup.
+A C++23 project template with Conan 2.25+ dependency management, CMake presets, testing, sanitizers,
+coverage, CI, and IDE setup.
 
 This repository uses:
 
