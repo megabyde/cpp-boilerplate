@@ -7,7 +7,7 @@
         "cli11/2.6.2#312ccb795ff5b571d9f4b1a3637b1eee%1776949795.774"
     ],
     "build_requires": [
-        "cmake/3.25#platform"
+        "cmake/3.29#platform"
     ],
     "python_requires": [],
     "config_requires": []

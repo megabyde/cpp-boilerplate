@@ -70,7 +70,7 @@ class CppBoilerplateConan(ConanFile):
         # the lock records cmake/<floor>#platform, not a downloaded package). Our own targets
         # build via `cmake --workflow`; the generator (Ninja or Makefiles) is left to the
         # environment, not pinned here.
-        self.tool_requires("cmake/[>=3.25]")
+        self.tool_requires("cmake/[>=3.29]")
         if self.options.with_tests:
             self.test_requires("gtest/1.17.0")
 
@@ -93,4 +93,14 @@ class CppBoilerplateConan(ConanFile):
         # CMAKE_CXX_COMPILER_LAUNCHER, so skip the probe on Windows.
         if self.settings.os != "Windows" and shutil.which("ccache"):
             tc.cache_variables["CMAKE_CXX_COMPILER_LAUNCHER"] = "ccache"
+        # Fast ELF linker for first-party targets when one is on PATH, mold preferred
+        # over lld. CMAKE_LINKER_TYPE (the reason for the CMake 3.29 floor) maps the
+        # choice to the right -fuse-ld flag per compiler. Linux-only: ld64 serves
+        # macOS well and MSVC's link.exe has no equivalent. mold needs GCC >= 12.1,
+        # below this project's GCC 13 floor, so no compiler-version guard is needed.
+        if self.settings.os == "Linux":
+            if shutil.which("mold"):
+                tc.cache_variables["CMAKE_LINKER_TYPE"] = "MOLD"
+            elif shutil.which("ld.lld"):
+                tc.cache_variables["CMAKE_LINKER_TYPE"] = "LLD"
         tc.generate()

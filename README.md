@@ -4,7 +4,7 @@
 [![CodeQL](https://github.com/megabyde/cpp-boilerplate/actions/workflows/codeql.yml/badge.svg)](https://github.com/megabyde/cpp-boilerplate/actions/workflows/codeql.yml)
 [![Pages](https://github.com/megabyde/cpp-boilerplate/actions/workflows/pages.yml/badge.svg)](https://github.com/megabyde/cpp-boilerplate/actions/workflows/pages.yml)
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)](https://en.cppreference.com/w/cpp/23)
-[![CMake](https://img.shields.io/badge/CMake-3.25%2B-064F8C.svg)](https://cmake.org)
+[![CMake](https://img.shields.io/badge/CMake-3.29%2B-064F8C.svg)](https://cmake.org)
 [![Conan](https://img.shields.io/badge/Conan-2.x-6699CB.svg)](https://conan.io)
 [![License](https://img.shields.io/badge/license-Unlicense-green.svg)](./LICENSE)
 
@@ -77,11 +77,13 @@ stable across toolchain changes.
 
 ## Prerequisites
 
-- [CMake](https://cmake.org/download/) 3.25+ (for workflow presets)
+- [CMake](https://cmake.org/download/) 3.29+ (for workflow presets and `CMAKE_LINKER_TYPE`)
 - [Conan](https://docs.conan.io/2/installation.html) 2.25+ (for the `CMakeConfigDeps` generator)
 - [Ninja](https://ninja-build.org/) (optional, Unix only; GNU Make is used when absent)
 - [ccache](https://ccache.dev/) (optional; used automatically for first-party targets when on PATH;
   not with the Visual Studio generator, which ignores compiler launchers)
+- [mold](https://github.com/rui314/mold) or [LLD](https://lld.llvm.org/) (optional, Linux only; used
+  automatically to link first-party targets when on PATH, mold preferred)
 - [Doxygen](https://www.doxygen.nl) (optional; required only for `make docs`)
 - A compiler and standard library with working C++23 support
   - [GCC](https://gcc.gnu.org/) 13+
