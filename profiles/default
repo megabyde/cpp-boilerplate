@@ -27,4 +27,4 @@ spdlog/*:use_std_fmt=False
 # graph onto one platform node. Conan does not verify the PATH cmake's version against this;
 # it trusts that whatever is on PATH satisfies the range. cmake_minimum_required enforces it.
 [platform_tool_requires]
-cmake/3.25
+cmake/3.29

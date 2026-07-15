@@ -47,8 +47,9 @@ jobs:
         with:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
-      - name: Install ccache
-        run: ${{ runner.os == 'macOS' && 'brew install ccache' || 'sudo apt-get install -y ccache' }}
+      # mold is Linux-only, like the linker probe in conanfile.py that picks it up.
+      - name: Install ccache and mold
+        run: ${{ runner.os == 'macOS' && 'brew install ccache' || 'sudo apt-get install -y ccache mold' }}
       # actions/cache saves only after an exact-key miss. The run_id suffix therefore saves an
       # updated cache after every run, while restore-keys starts from the newest previous cache.
       - uses: actions/cache@v6
@@ -143,7 +144,7 @@ jobs:
         with:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
-      - run: sudo apt-get install -y ccache
+      - run: sudo apt-get install -y ccache mold
       - uses: actions/cache@v6
         with:
           path: .ccache

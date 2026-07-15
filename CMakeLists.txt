@@ -1,6 +1,7 @@
-# 3.25 is the minimum required by this template: workflow presets and CMakePresets schema v6 (3.25),
+# 3.29 is the minimum required by this template: CMAKE_LINKER_TYPE (3.29, set by the Conan toolchain
+# when mold or lld is on PATH), workflow presets and CMakePresets schema v6 (3.25),
 # COMPILE_WARNING_AS_ERROR (3.24), cxx_std_23 (3.20).
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.29)
 
 project(
     cpp_boilerplate
