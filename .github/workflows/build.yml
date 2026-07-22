@@ -47,7 +47,7 @@ jobs:
         with:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
-      # mold is Linux-only, like the linker probe in conanfile.py that picks it up.
+      # The Conan toolchain probes for mold only on Linux, so the macOS leg installs ccache alone.
       - name: Install ccache and mold
         run: ${{ runner.os == 'macOS' && 'brew install ccache' || 'sudo apt-get install -y ccache mold' }}
       # actions/cache saves only after an exact-key miss. The run_id suffix therefore saves an

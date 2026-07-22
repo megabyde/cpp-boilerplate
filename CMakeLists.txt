@@ -1,6 +1,6 @@
-# 3.29 is the minimum required by this template: CMAKE_LINKER_TYPE (3.29, set by the Conan toolchain
-# when mold or lld is on PATH), workflow presets and CMakePresets schema v6 (3.25),
-# COMPILE_WARNING_AS_ERROR (3.24), cxx_std_23 (3.20).
+# CMake 3.29 is required for CMAKE_LINKER_TYPE, which the Conan toolchain sets when mold or LLD is
+# on PATH. This template also uses workflow presets and CMakePresets schema v6 (3.25),
+# COMPILE_WARNING_AS_ERROR (3.24), and cxx_std_23 (3.20).
 cmake_minimum_required(VERSION 3.29)
 
 project(

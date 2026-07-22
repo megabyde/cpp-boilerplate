@@ -93,11 +93,11 @@ class CppBoilerplateConan(ConanFile):
         # CMAKE_CXX_COMPILER_LAUNCHER, so skip the probe on Windows.
         if self.settings.os != "Windows" and shutil.which("ccache"):
             tc.cache_variables["CMAKE_CXX_COMPILER_LAUNCHER"] = "ccache"
-        # Fast ELF linker for first-party targets when one is on PATH, mold preferred
-        # over lld. CMAKE_LINKER_TYPE (the reason for the CMake 3.29 floor) maps the
-        # choice to the right -fuse-ld flag per compiler. Linux-only: ld64 serves
-        # macOS well and MSVC's link.exe has no equivalent. mold needs GCC >= 12.1,
-        # below this project's GCC 13 floor, so no compiler-version guard is needed.
+        # Select an ELF linker for first-party targets when one is on PATH, preferring mold over
+        # LLD. CMAKE_LINKER_TYPE maps the choice to the compiler-specific -fuse-ld flag and sets
+        # the CMake 3.29 floor. Keep the probe Linux-only: macOS uses ld64, while MSVC uses
+        # link.exe. mold requires GCC 12.1 or newer, below this project's GCC 13 floor, so no
+        # compiler-version guard is needed.
         if self.settings.os == "Linux":
             if shutil.which("mold"):
                 tc.cache_variables["CMAKE_LINKER_TYPE"] = "MOLD"
