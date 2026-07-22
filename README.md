@@ -83,7 +83,7 @@ stable across toolchain changes.
 - [ccache](https://ccache.dev/) (optional; used automatically for first-party targets when on PATH;
   not with the Visual Studio generator, which ignores compiler launchers)
 - [mold](https://github.com/rui314/mold) or [LLD](https://lld.llvm.org/) (optional, Linux only; used
-  automatically to link first-party targets when on PATH, mold preferred)
+  automatically to link first-party targets when on PATH, with mold preferred)
 - [Doxygen](https://www.doxygen.nl) (optional; required only for `make docs`)
 - A compiler and standard library with working C++23 support
   - [GCC](https://gcc.gnu.org/) 13+
