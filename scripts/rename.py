@@ -12,11 +12,11 @@ in the lock file's dependency graph.
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 OLD_SNAKE = "cpp_boilerplate"
 OLD_KEBAB = "cpp-boilerplate"
