@@ -2,8 +2,8 @@
 """Rename this template for a new project.
 
 Derives kebab-case, snake_case, and PascalCase identifiers from a name in any common casing.
-Rewrites the tracked project files, moves the include directory, then removes this script and its
-README section. Use --dry-run to preview the changes first.
+Rewrites the tracked project files, moves the include directory, then removes this script, its
+README section, and the workflow that smoke-tests it. Use --dry-run to preview the changes first.
 
 conan.lock needs no regeneration: the project name lives in conanfile.py/CMakeLists.txt, not
 in the lock file's dependency graph.
@@ -24,6 +24,9 @@ OLD_CONAN_CLASS = "CppBoilerplateConan"
 OLD_TITLE = "C++ Boilerplate"
 OLD_GITHUB_OWNER = "megabyde"
 INSTANTIATE_HEADING = "## Instantiate this template"
+# This workflow invokes scripts/rename.py, so remove both together to keep the renamed project's
+# first CI run from referencing a missing script
+TEMPLATE_WORKFLOW = Path(".github/workflows/template.yml")
 
 
 def split_words(name: str) -> list[str]:
@@ -157,9 +160,13 @@ def main() -> int:
         if not args.dry_run:
             shutil.move(str(old_include_dir), str(new_include_dir))
 
-    print(f"{'Would remove' if args.dry_run else 'Removing'} {script_path.relative_to(root)}")
-    if not args.dry_run:
-        script_path.unlink()
+    remove_verb = "Would remove" if args.dry_run else "Removing"
+    for path in (script_path, root / TEMPLATE_WORKFLOW):
+        if not path.exists():
+            continue
+        print(f"{remove_verb} {path.relative_to(root)}")
+        if not args.dry_run:
+            path.unlink()
 
     if args.github_owner is None:
         print(

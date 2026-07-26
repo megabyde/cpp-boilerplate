@@ -35,8 +35,9 @@ python3 scripts/rename.py my-project --github-owner your-github-user
 
 From `my-project`, the script derives `my_project` for CMake targets, the C++ namespace, and the
 include directory. It derives `MyProjectConan` for the Conan recipe class. It then updates the
-tracked project files, moves `include/cpp_boilerplate/` to `include/my_project/`, and removes both
-the script and this section.
+tracked project files and moves `include/cpp_boilerplate/` to `include/my_project/`. Finally it
+removes the three things that stop applying once the template is instantiated: itself, this section,
+and `.github/workflows/template.yml`, the workflow that smoke-tests the rename.
 
 Run with `--dry-run` first to preview every change. Use `--title "My Project"` to override the
 README heading; the default is the project name in title case.
