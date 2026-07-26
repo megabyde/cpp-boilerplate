@@ -1,5 +1,0 @@
-# cmakelint (github.com/cmake-lint/cmake-lint). Layout is owned by cmake-format
-# (.cmake-format.yaml): line width 100, and the 2-space indent heuristic is off
-# because it fights cmake-format's continuation alignment.
-filter=-whitespace/indent
-linelength=100

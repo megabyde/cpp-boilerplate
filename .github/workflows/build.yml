@@ -138,10 +138,13 @@ jobs:
       # unpinned clang-format/clang-tidy.
       - name: Pin lint toolchain
         run: |
+          # cmakelang reads .cmake-format.yaml through PyYAML without declaring the dependency. Pin
+          # it explicitly instead of relying on the runner image.
           python3 -m pip install --break-system-packages --user \
             clang-format==${{ env.CLANG_FORMAT_VERSION }} \
             clang-tidy==${{ env.CLANG_TIDY_VERSION }} \
             cmakelang==${{ env.CMAKELANG_VERSION }} \
+            pyyaml==${{ env.PYYAML_VERSION }} \
             ruff==${{ env.RUFF_VERSION }}
           npm install -g \
             prettier@${{ env.PRETTIER_VERSION }} \

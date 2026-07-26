@@ -175,10 +175,13 @@ coverage-report: coverage ## Generate an HTML coverage report and enforce the li
 # Lint and format
 # ---------------------------------------------------------------------------
 .PHONY: lint
-lint: $(STAMP_DIR)/debug.stamp ## Run clang-tidy, ruff, and markdownlint
+lint: $(STAMP_DIR)/debug.stamp ## Run clang-tidy, cmake-lint, ruff, and markdownlint
 	$(call require-tool,clang-tidy)
 	cmake --preset debug
 	PATH="$(PATH)" clang-tidy -p build/debug $(TIDY_SOURCES)
+	echo "Linting CMake sources..."
+	$(call require-tool,cmake-lint)
+	cmake-lint $(CMAKE_FORMAT_SOURCES)
 	echo "Linting Python sources..."
 	$(call require-tool,ruff)
 	ruff check $(PYTHON_SOURCES)
