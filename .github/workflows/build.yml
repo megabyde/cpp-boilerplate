@@ -48,8 +48,10 @@ jobs:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
       # The Conan toolchain probes for mold only on Linux, so the macOS leg installs ccache alone.
+      # Refresh apt metadata first because runner images can retain package lists whose versions no
+      # longer exist
       - name: Install ccache and mold
-        run: ${{ runner.os == 'macOS' && 'brew install ccache' || 'sudo apt-get install -y ccache mold' }}
+        run: ${{ runner.os == 'macOS' && 'brew install ccache' || 'sudo apt-get update && sudo apt-get install -y ccache mold' }}
       # actions/cache saves only after an exact-key miss. The run_id suffix therefore saves an
       # updated cache after every run, while restore-keys starts from the newest previous cache.
       - uses: actions/cache@v6
@@ -110,7 +112,7 @@ jobs:
         with:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
-      - run: sudo apt-get install -y ccache mold
+      - run: sudo apt-get update && sudo apt-get install -y ccache mold
       - uses: actions/cache@v6
         with:
           path: .ccache
