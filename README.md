@@ -224,7 +224,8 @@ make lint
 (cmake-format, from the [cmakelang](https://cmake-format.readthedocs.io) package), Python scripts
 ([ruff](https://docs.astral.sh/ruff/) format), and tracked Markdown/JSON/YAML files
 ([prettier](https://prettier.io); `conan.lock` is excluded because Conan owns its formatting).
-`make lint` runs clang-tidy against the debug compilation database, `ruff check` on `scripts/`, and
+`make lint` runs clang-tidy against the debug compilation database, `cmake-lint` on
+`CMakeLists.txt`, `ruff check` on `scripts/`, and
 [markdownlint](https://github.com/DavidAnson/markdownlint-cli2) on Markdown files; every enabled
 check is an error. CI pins all lint and format tool versions in [`.github/ci.env`](.github/ci.env).
 

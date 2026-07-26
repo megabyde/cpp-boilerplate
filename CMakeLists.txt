@@ -201,6 +201,7 @@ else()
         docs
         COMMAND ${CMAKE_COMMAND} -E echo "Doxygen not found. Install Doxygen to build docs."
         COMMAND ${CMAKE_COMMAND} -E false
+        COMMENT "Generate API documentation"
     )
 endif()
 
