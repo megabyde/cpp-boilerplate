@@ -2,8 +2,8 @@ FormatStyle: file
 # Every enabled check gates the build: clang-tidy exits nonzero only on errors, so
 # anything short of '*' here lets findings print in CI without failing it.
 WarningsAsErrors: '*'
-# clang-tidy sees the absolute paths resolved by the preprocessor, so a project-relative anchor
-# matches no headers and drops their diagnostics. '.*' does not add dependency noise: Conan's
+# HeaderFilterRegex matches absolute header paths in clang-tidy diagnostics, so a project-relative
+# anchor excludes every project header. Matching all paths adds no dependency noise: Conan's
 # CMakeConfigDeps targets use -isystem, and clang-tidy suppresses system headers by default.
 HeaderFilterRegex: '.*'
 

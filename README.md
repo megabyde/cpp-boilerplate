@@ -226,8 +226,9 @@ make lint
 ([prettier](https://prettier.io); `conan.lock` is excluded because Conan owns its formatting).
 `make lint` runs clang-tidy against the debug compilation database, `cmake-lint` on
 `CMakeLists.txt`, `ruff check` on `scripts/`, and
-[markdownlint](https://github.com/DavidAnson/markdownlint-cli2) on Markdown files; every enabled
-check is an error. CI pins all lint and format tool versions in [`.github/ci.env`](.github/ci.env).
+[markdownlint](https://github.com/DavidAnson/markdownlint-cli2) on Markdown files. Any reported
+finding fails the target. CI pins all lint and format tool versions in
+[`.github/ci.env`](.github/ci.env).
 
 ## Coverage
 
