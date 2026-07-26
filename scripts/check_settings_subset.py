@@ -41,6 +41,16 @@ def main() -> int:
     required_path, installed_path = sys.argv[1], sys.argv[2]
     required = sanitizer_values(Path(required_path).read_text())
     installed = sanitizer_values(Path(installed_path).read_text())
+    if not required:
+        # If the required file becomes unparseable, an empty result would make every installed
+        # configuration pass. Fail closed because Prettier controls the file layout and can change
+        # it independently of this script.
+        print(
+            f"{required_path}: parsed no sanitizer values; its layout no longer matches what"
+            " this script recognizes, so the subset check cannot run",
+            file=sys.stderr,
+        )
+        return 1
     status = 0
     for compiler, needed in sorted(required.items()):
         missing = needed - installed.get(compiler, set())
