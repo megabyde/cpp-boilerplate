@@ -1,0 +1,63 @@
+name: Template
+
+# Exercise the template's first-use path by renaming, building, and testing a project. This
+# workflow is separate because scripts/rename.py deletes both itself and this file; a renamed
+# project has no rename operation left to test.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  rename:
+    name: rename / ubuntu-latest / gcc
+    runs-on: ubuntu-latest
+    env:
+      CC: gcc
+      CXX: g++
+    steps:
+      - uses: actions/checkout@v7
+      # Tool pins live in .github/ci.env, shared across workflows
+      - name: Load CI env
+        run: cat .github/ci.env >> "$GITHUB_ENV"
+      - uses: conan-io/setup-conan@v1
+        with:
+          version: ${{ env.CONAN_VERSION }}
+          cache_packages: true
+      - name: Rename the template
+        run: |
+          python3 scripts/rename.py ci-smoke --github-owner tester
+          # Bracketed characters prevent the patterns from matching themselves: rename.py rewrites
+          # every tracked file, and a literal cpp_boilerplate here would be replaced, making this
+          # check self-fulfilling
+          if grep -rIniE 'cpp[_-]?boilerplate|mega[b]yde' --exclude-dir=.git .; then
+            echo "template identifiers survived the rename"
+            exit 1
+          fi
+          # rename.py removes itself and this workflow; no references may remain or the renamed
+          # project's first CI run fails on a missing file
+          if [ -e scripts/rename.py ] || [ -e .github/workflows/template.yml ]; then
+            echo "rename.py did not remove itself and this workflow"
+            exit 1
+          fi
+          if grep -rIn 'scripts/rename.py' --exclude-dir=.git .; then
+            echo "a reference to the removed rename script survived"
+            exit 1
+          fi
+      - name: Build and test the renamed project
+        run: |
+          conan install . -pr=profiles/default -s="build_type=Debug" --build=missing --lockfile=conan.lock
+          cmake --workflow --preset debug
+      # The startup line interpolates a rewritten string in main.cpp, so this verifies the rename
+      # reached the runtime output, not just identifiers and filenames
+      - name: Run the renamed binary
+        run: ./build/debug/ci_smoke | grep -E 'ci-smoke [0-9.]+ starting'
