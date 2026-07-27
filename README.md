@@ -244,8 +244,8 @@ make coverage-report
 ```
 
 Both compilers emit GCov-format data (`--coverage`), reported by a single tool:
-[gcovr](https://gcovr.com) (`pip install gcovr`). It writes `coverage-report/index.html` and
-`coverage.xml` under `build/coverage/`.
+[gcovr](https://gcovr.com) (Python 3.10+; `pip install gcovr`). It writes
+`coverage-report/index.html` and `coverage.xml` under `build/coverage/`.
 
 The report fails if line coverage falls below `COVERAGE_FAIL_UNDER` (default 100; override with
 `make coverage-report COVERAGE_FAIL_UNDER=80`).
