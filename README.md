@@ -86,9 +86,9 @@ stable across toolchain changes.
 - [mold](https://github.com/rui314/mold) or [LLD](https://lld.llvm.org/) (optional, Linux only; used
   automatically to link first-party targets when on PATH, with mold preferred)
 - [Doxygen](https://www.doxygen.nl) (optional; required only for `make docs`)
-- A compiler and standard library with working C++23 support
-  - [GCC](https://gcc.gnu.org/) 13+
-  - [LLVM Clang](https://llvm.org/) 17+
+- A compiler and standard library with C++23 `std::ranges::to` support
+  - [GCC](https://gcc.gnu.org/) 14+
+  - [LLVM Clang](https://llvm.org/) 17+ with libc++ 17+ or libstdc++ 14+
   - [Apple Clang](https://developer.apple.com/xcode/) 17+ recommended
   - [MSVC](https://visualstudio.microsoft.com/) 2022 (17.10+) on Windows
 

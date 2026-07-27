@@ -19,6 +19,9 @@ jobs:
   analyze:
     name: codeql / ubuntu-latest / cpp
     runs-on: ubuntu-latest
+    env:
+      CC: gcc-14
+      CXX: g++-14
     permissions:
       actions: read
       contents: read
@@ -29,6 +32,7 @@ jobs:
       # Tool pins live in .github/ci.env, shared across workflows.
       - name: Load CI env
         run: cat .github/ci.env >> "$GITHUB_ENV"
+      - run: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14
       - uses: github/codeql-action/init@v4
         with:
           languages: c-cpp
