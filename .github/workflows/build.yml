@@ -18,8 +18,8 @@ jobs:
     name: ${{ matrix.preset }} / ${{ matrix.os }} / ${{ matrix.compiler }}
     runs-on: ${{ matrix.os }}
     env:
-      CC: ${{ matrix.compiler == 'gcc' && 'gcc' || 'clang' }}
-      CXX: ${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
+      CC: ${{ matrix.compiler == 'gcc' && 'gcc-14' || 'clang' }}
+      CXX: ${{ matrix.compiler == 'gcc' && 'g++-14' || 'clang++' }}
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_MAXSIZE: 200M
     strategy:
@@ -43,6 +43,9 @@ jobs:
         name: Load CI env
         shell: bash
         run: cat .github/ci.env >> "$GITHUB_ENV"
+      - name: Install GCC 14
+        if: runner.os == 'Linux' && matrix.compiler == 'gcc'
+        run: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}
@@ -101,18 +104,18 @@ jobs:
     name: coverage / ubuntu-latest / gcc
     runs-on: ubuntu-latest
     env:
-      CC: gcc
-      CXX: g++
+      CC: gcc-14
+      CXX: g++-14
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_MAXSIZE: 200M
     steps:
       - uses: actions/checkout@v7
       - *load-ci-env
+      - run: sudo apt-get update && sudo apt-get install -y ccache mold gcc-14 g++-14
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}
           cache_packages: true
-      - run: sudo apt-get update && sudo apt-get install -y ccache mold
       - uses: actions/cache@v6
         with:
           path: .ccache
@@ -129,9 +132,13 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    env:
+      CC: gcc-14
+      CXX: g++-14
     steps:
       - uses: actions/checkout@v7
       - *load-ci-env
+      - run: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}
