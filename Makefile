@@ -62,7 +62,6 @@ TIDY_SOURCES = $(shell find src tests -type f -name '*.cpp')
 # Conan's, not prettier's.
 PRETTIER_SOURCES = $(shell git ls-files '*.md' '*.json' '*.yml' '*.yaml' ':!conan.lock')
 MARKDOWN_SOURCES = $(shell git ls-files '*.md')
-# Lint and format conanfile.py alongside the first-party Python scripts
 PYTHON_SOURCES = scripts/ conanfile.py
 
 define require-tool

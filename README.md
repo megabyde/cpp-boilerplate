@@ -221,19 +221,14 @@ make lint
 ```
 
 `make format` and `make format-check` cover C++ sources (clang-format), `CMakeLists.txt`
-(cmake-format, from the [cmakelang](https://cmake-format.readthedocs.io) package), Python sources in
-`scripts/` and `conanfile.py` ([ruff](https://docs.astral.sh/ruff/) format), and tracked
-Markdown/JSON/YAML files ([prettier](https://prettier.io); `conan.lock` is excluded because Conan
-owns its formatting). `make lint` runs clang-tidy against the debug compilation database,
-`cmake-lint` on `CMakeLists.txt`, `ruff check` on those Python sources, and
+(cmake-format, from the [cmakelang](https://cmake-format.readthedocs.io) package), `scripts/` and
+`conanfile.py` ([ruff](https://docs.astral.sh/ruff/) format), and tracked Markdown/JSON/YAML files
+([prettier](https://prettier.io); `conan.lock` is excluded because Conan owns its formatting).
+`make lint` runs clang-tidy against the debug compilation database, `cmake-lint` on
+`CMakeLists.txt`, `ruff check` on `scripts/` and `conanfile.py`, and
 [markdownlint](https://github.com/DavidAnson/markdownlint-cli2) on Markdown files. Any reported
 finding fails the target. CI pins all lint and format tool versions in
 [`.github/ci.env`](.github/ci.env).
-
-[`ruff.toml`](ruff.toml) extends Ruff's `E4`, `E7`, `E9`, and `F` defaults to all `E` checks, then
-adds import ordering (`I`), Python modernization (`UP`), likely bugs (`B`), simplification (`SIM`),
-Ruff-specific rules (`RUF`), and annotations (`ANN`). As with `.clang-tidy`, every finding fails the
-lint target.
 
 ## Coverage
 
