@@ -12,7 +12,7 @@ namespace cpp_boilerplate {
 
 std::vector<std::string_view> split_views_vec(std::string_view record, char delimiter)
 {
-    return split_views(record, delimiter) | std::ranges::to<std::vector>();
+    return std::ranges::to<std::vector>(split_views(record, delimiter));
 }
 
 } // namespace cpp_boilerplate
