@@ -1,12 +1,19 @@
 # Security Policy
 
-## Supported Versions
+## Supported versions
 
 This repository is a template. Security fixes apply to the current `main` branch.
 
-## Reporting a Vulnerability
+## Report a vulnerability
 
-Report suspected vulnerabilities through GitHub private vulnerability reporting, not a public issue.
-Include the affected revision, reproduction steps, expected impact, and any suggested fix.
+Outcome: a private report that maintainers can reproduce and triage without exposing the issue
+publicly.
 
-We triage reports and coordinate fixes through GitHub Security Advisories.
+1. Open
+   [GitHub private vulnerability reporting](https://github.com/megabyde/cpp-boilerplate/security/advisories/new).
+   Do not create a public issue.
+2. Include the affected revision, reproduction steps, expected impact, and any suggested fix.
+3. Submit the report.
+
+Reporting is complete when GitHub creates the private security advisory. We triage the report and
+coordinate fixes through that advisory.
