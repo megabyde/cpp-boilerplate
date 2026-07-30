@@ -24,14 +24,34 @@ This repository uses:
 
 ## Instantiate this template
 
-After creating your own repository from this
-[template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template),
-rename the project with [`scripts/rename.py`](scripts/rename.py). The script uses only the Python
-standard library:
+Outcome: a new repository with project names, targets, namespaces, include paths, and GitHub links
+renamed consistently.
 
-```console
-python3 scripts/rename.py my-project --github-owner your-github-user
-```
+First, create and clone a repository from this
+[template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
+The rename script uses only the Python standard library.
+
+1. Preview every change without modifying the checkout:
+
+   ```console
+   $ python3 scripts/rename.py my-project --github-owner your-github-user --dry-run
+   ...
+
+   Dry run: no files were changed. Re-run without --dry-run to apply.
+   ```
+
+   The command must end with `Dry run: no files were changed.` Review the listed rewrites, move, and
+   removals before continuing.
+
+2. Apply the same rename without `--dry-run`:
+
+   ```console
+   $ python3 scripts/rename.py my-project --github-owner your-github-user
+   ...
+   Moved include/cpp_boilerplate -> include/my_project
+   Removing scripts/rename.py
+   Removing .github/workflows/template.yml
+   ```
 
 From `my-project`, the script derives `my_project` for CMake targets, the C++ namespace, and the
 include directory. It derives `MyProjectConan` for the Conan recipe class. It then updates the
@@ -39,8 +59,10 @@ tracked project files and moves `include/cpp_boilerplate/` to `include/my_projec
 removes the three things that stop applying once the template is instantiated: itself, this section,
 and `.github/workflows/template.yml`, the workflow that smoke-tests the rename.
 
-Run with `--dry-run` first to preview every change. Use `--title "My Project"` to override the
-README heading; the default is the project name in title case.
+The rename is complete when the command reports the rewritten files, moves
+`include/cpp_boilerplate/` to `include/my_project/`, and removes the script and template workflow.
+Use `--title "My Project"` to override the README heading; the default is the project name in title
+case.
 
 ## Operating model
 
@@ -78,19 +100,26 @@ stable across toolchain changes.
 
 ## Prerequisites
 
+Required:
+
 - [CMake](https://cmake.org/download/) 3.29+ (for workflow presets and `CMAKE_LINKER_TYPE`)
 - [Conan](https://docs.conan.io/2/installation.html) 2.25+ (for the `CMakeConfigDeps` generator)
-- [Ninja](https://ninja-build.org/) (optional, Unix only; GNU Make is used when absent)
-- [ccache](https://ccache.dev/) (optional; used automatically for first-party targets when on PATH;
-  not with the Visual Studio generator, which ignores compiler launchers)
-- [mold](https://github.com/rui314/mold) or [LLD](https://lld.llvm.org/) (optional, Linux only; used
-  automatically to link first-party targets when on PATH, with mold preferred)
-- [Doxygen](https://www.doxygen.nl) (optional; required only for `make docs`)
 - A compiler and standard library with C++23 `std::ranges::to` support
   - [GCC](https://gcc.gnu.org/) 14+
   - [LLVM Clang](https://llvm.org/) 17+ with libc++ 17+ or libstdc++ 14+
-  - [Apple Clang](https://developer.apple.com/xcode/) 17+ recommended
+  - [Apple Clang](https://developer.apple.com/xcode/) 17+ on macOS
   - [MSVC](https://visualstudio.microsoft.com/) 2022 (17.10+) on Windows
+
+Optional:
+
+- [Ninja](https://ninja-build.org/) for parallel, incremental Unix builds; GNU Make is used when
+  Ninja is absent
+- [ccache](https://ccache.dev/) to reuse compiler output across rebuilds; used automatically for
+  first-party targets when on PATH, except with the Visual Studio generator, which ignores compiler
+  launchers
+- [mold](https://github.com/rui314/mold) or [LLD](https://lld.llvm.org/) to reduce Linux link times;
+  used automatically for first-party targets when on PATH, with mold preferred
+- [Doxygen](https://www.doxygen.nl) to generate local API documentation with `make docs`
 
 The Conan recipe selects the CMake generator:
 
@@ -105,88 +134,80 @@ This boilerplate supports Linux, macOS, and Windows.
 
 ### Quick start
 
-```console
+Outcome: dependencies installed, the debug preset configured and built, and the test suite passed.
+
+```bash
 git clone https://github.com/megabyde/cpp-boilerplate.git
 cd cpp-boilerplate
 make bootstrap  # generate ConanPresets.json
 make debug
 ```
 
-<!-- prettier-ignore -->
+The setup is complete when `make debug` exits successfully after running the tests.
+
 > [!TIP]
-> Run `make help` to list local convenience targets.
+> Run `make help` to list the other local targets.
 
 ### Windows
 
-The `Makefile` is a Unix convenience wrapper. On Windows, drive Conan and the CMake presets directly
-from any shell; the Visual Studio generator locates MSVC on its own, so no Developer PowerShell or
-`vcvarsall` setup is required:
+Outcome: dependencies installed, the release preset configured and built, and the test suite passed.
 
-```console
+The `Makefile` is a Unix convenience wrapper. On Windows, run Conan and the CMake preset directly
+from any shell. The Visual Studio generator locates MSVC, so no Developer PowerShell or `vcvarsall`
+setup is required.
+
+```bash
 conan install . -pr=profiles/default -s="build_type=Release" --build=missing --lockfile=conan.lock
 cmake --workflow --preset release
 ```
 
-`cmake --workflow --preset <name>` runs configure, build, and test in one step; it is what the
-`make` targets call on Unix too. The `sanitize`, `sanitize-asan`, `sanitize-ubsan`, and `coverage`
+The setup is complete when the workflow exits successfully after running the tests.
+`cmake --workflow --preset <name>` runs configure, build, and test in one step; the Unix `make`
+targets call the same workflows. The `sanitize`, `sanitize-asan`, `sanitize-ubsan`, and `coverage`
 presets are Unix-only.
 
-### Sanitizers (ASAN + UBSAN)
+### Sanitizers (ASan + UBSan)
 
-```console
-make sanitize
-make sanitize-asan
-make sanitize-ubsan
-```
+Outcome: first-party code and dependencies built with matching sanitizer instrumentation, followed
+by the instrumented test suite.
 
-This uses a dedicated sanitizer build tree (Conan names it `build/debug-addressundefinedbehavior`
-after the build type and `compiler.sanitizer` setting) and a Conan sanitize profile so dependencies
-are rebuilt with matching instrumentation, not linked from their plain (uninstrumented) Debug
-binaries.
+> [!IMPORTANT]
+> The first sanitizer build may add `compiler.sanitizer` from
+> [`conan/settings_user.yml`](conan/settings_user.yml) to the global Conan configuration. If the
+> Conan home already has `settings_user.yml`, the build leaves it untouched and checks that it
+> contains the required values. If the check fails, merge the reported values into the existing
+> file, then rerun the same command.
 
-The three modes use Conan profile inheritance. Each mode inherits
-[`profiles/sanitize-common`](profiles/sanitize-common), which includes `profiles/default`, selects
-`Debug`, and defines the common instrumentation flags and `[runenv]`. The mode profile then appends
-its own `-fsanitize` flags:
+Choose one mode:
 
-- `sanitize`: combined ASan + UBSan ([`profiles/sanitize`](profiles/sanitize)); driven by
-  `make sanitize` and CI.
-- `sanitize-asan`: AddressSanitizer only ([`profiles/sanitize-asan`](profiles/sanitize-asan)).
-- `sanitize-ubsan`: UndefinedBehaviorSanitizer only
-  ([`profiles/sanitize-ubsan`](profiles/sanitize-ubsan)).
+- **ASan + UBSan:** `make sanitize` uses [`profiles/sanitize`](profiles/sanitize) and
+  `build/debug-addressundefinedbehavior`
+- **ASan:** `make sanitize-asan` uses [`profiles/sanitize-asan`](profiles/sanitize-asan) and
+  `build/debug-address`
+- **UBSan:** `make sanitize-ubsan` uses [`profiles/sanitize-ubsan`](profiles/sanitize-ubsan) and
+  `build/debug-undefinedbehavior`
 
-Each `make sanitize*` target installs the matching instrumented dependency graph, then runs the
-matching CMake workflow preset. All three modes share `conan.lock`.
+The sanitizer run is complete when the selected target exits successfully after running the tests.
+If a sanitizer detects an error, it prints a stack trace, stops at the first finding, and returns a
+failure through CTest to the selected `make` target. Fix the reported source error, then rerun the
+same target.
 
-Each mode gets its own `package_id` and build tree (`build/debug-address`,
-`build/debug-undefinedbehavior`, `build/debug-addressundefinedbehavior`).
+`make sanitize` is the combined mode used by CI. To install all three instrumented dependency graphs
+without running their workflows, use `make bootstrap-sanitize`. The default `make bootstrap` does
+not install them.
 
-ASan/UBSan runtime options (`halt_on_error`, `print_stacktrace`, and related checks) live in
-`profiles/sanitize-common` under `[runenv]` (inherited by every mode). Conan injects them into the
-generated per-mode test preset, which the public `sanitize*` test preset inherits, so
-`ctest`/`cmake --workflow` runs the instrumented tests with those options: a single source of truth,
-no duplication in `CMakePresets.json`.
+All three profiles inherit [`profiles/sanitize-common`](profiles/sanitize-common), which includes
+`profiles/default`, selects `Debug`, and defines the shared instrumentation flags and `[runenv]`.
+Each mode appends its own `-fsanitize` flags and shares `conan.lock`.
 
-That separation relies on a custom `compiler.sanitizer` setting defined in
-[`conan/settings_user.yml`](conan/settings_user.yml). The setting gives instrumented dependency
-binaries a distinct Conan `package_id`; the sanitizer flags themselves travel through the profile's
-`tools.build:*` conf, which does not affect `package_id`. Without the setting, `--build=missing`
-would silently reuse the uninstrumented Debug binaries.
+The custom `compiler.sanitizer` setting gives each instrumented dependency graph a distinct Conan
+`package_id`. Without it, `--build=missing` could reuse plain Debug dependencies. The setting
+defaults to `null`, which is omitted from `package_id`, so non-sanitizer builds do not change.
+First-party targets receive the same profile flags through the Conan toolchain.
 
-`make bootstrap-sanitize` installs that file into your Conan home with `conan config install conan/`
-(the repository's `conan/` directory) before resolving dependencies, but only when the home has no
-`settings_user.yml` yet. An existing file (for example one your dotfiles manage) is left untouched;
-it just has to cover the sanitizer values this project uses. A superset (extra compilers, values, or
-other subsettings) is fine: [`scripts/check_settings_subset.py`](scripts/check_settings_subset.py)
-verifies this and the build stops with a merge instruction when values are missing. Installing the
-file changes the global Conan configuration: it adds the `compiler.sanitizer` subsetting. Its
-default is `null`, which is omitted from `package_id`, so non-sanitize builds do not change.
-
-The default `make bootstrap` does not install sanitizer-instrumented dependencies. Run
-`make bootstrap-sanitize` or the matching `make sanitize*` target when you need them.
-
-First-party targets are instrumented by the same Conan toolchain (the profile's `tools.build:*`
-flags reach the consumer), so the profiles are the single source of sanitizer flags.
+ASan/UBSan runtime options such as `halt_on_error` and `print_stacktrace` live under `[runenv]` in
+`profiles/sanitize-common`. Conan injects them into the generated test presets inherited by the
+public `sanitize*` presets, keeping the runtime configuration out of `CMakePresets.json`.
 
 ### Tests
 
@@ -205,20 +226,36 @@ interface for developers or CI.
 
 ## Dependency lock file
 
-`conan.lock` pins the exact dependency graph for reproducible builds. To update dependencies:
+Outcome: updated dependency pins and a matching `conan.lock` for reproducible builds.
+
+Update dependencies in this order:
 
 1. Edit version pins in `conanfile.py`.
 2. Regenerate the lock file with `make lock`.
 3. Run the appropriate `make` target to verify.
 4. Commit both `conanfile.py` and `conan.lock`.
 
+The update is complete when the selected build and test workflow passes and both files contain the
+intended dependency change.
+
 ## Formatting and linting
 
-```console
+Use `make format` to rewrite supported files in place:
+
+```bash
 make format
+```
+
+Then verify formatting and lint findings without modifying files:
+
+```bash
 make format-check
 make lint
 ```
+
+The check is complete when both verification targets exit successfully. If `make format-check`
+fails, rerun `make format` and inspect its changes before checking again. Reported lint findings
+require a source fix.
 
 `make format` and `make format-check` cover C++ sources (clang-format), `CMakeLists.txt`
 (cmake-format, from the [cmakelang](https://cmake-format.readthedocs.io) package), `scripts/` and
@@ -232,29 +269,38 @@ finding fails the target. CI pins all lint and format tool versions in
 
 ## Coverage
 
-Build, test, and generate an HTML coverage report with an enforced line floor:
+Prerequisite: Python 3.10+ with [gcovr](https://gcovr.com) installed (e.g., `pip install gcovr`).
 
-```console
+Build, test, and generate the coverage report:
+
+```bash
 make coverage-report
 ```
 
-Both compilers emit GCov-format data (`--coverage`), reported by a single tool:
-[gcovr](https://gcovr.com) (Python 3.10+; `pip install gcovr`). It writes
-`coverage-report/index.html` and `coverage.xml` under `build/coverage/`.
+The run is complete when the tests pass, gcovr reports a line percentage at or above the configured
+floor, and these files exist:
+
+- `build/coverage/coverage-report/index.html`
+- `build/coverage/coverage.xml`
+
+Both supported compilers emit GCov-format data (`--coverage`), which gcovr reports through one
+interface.
 
 The report fails if line coverage falls below `COVERAGE_FAIL_UNDER` (default 100; override with
 `make coverage-report COVERAGE_FAIL_UNDER=80`).
 
 ## Documentation
 
-Generate Doxygen HTML documentation locally:
+Prerequisite: Doxygen installed and available on `PATH`.
 
-```console
+Generate the API documentation:
+
+```bash
 make docs
 ```
 
-The output is written to `build/docs/html/`. GitHub Pages builds the same target and publishes the
-result from the `main` branch.
+The build is complete when `build/docs/html/index.html` exists. GitHub Pages runs the same target
+and publishes the result from the `main` branch.
 
 ## Build policy
 
@@ -289,13 +335,24 @@ with these flags.
 
 ## Install
 
-`cmake --install` installs the application binary to `<prefix>/bin`. Only the executable is
-installed; the static library is an internal build artifact and is deliberately not installed or
-exported.
+Outcome: the release application installed at `<prefix>/bin/cpp_boilerplate`. Only the executable is
+installed; the static library remains an internal build artifact.
+
+1. Build and test the release preset:
+
+```bash
+cmake --workflow --preset release
+```
+
+1. Install to the selected prefix:
+
+```bash
+cmake --install build/release --prefix /path/to/prefix
+```
+
+1. Run the installed binary and verify its version:
 
 ```console
-$ cmake --workflow --preset release
-$ cmake --install build/release --prefix /path/to/prefix
 $ /path/to/prefix/bin/cpp_boilerplate
 [2026-06-30 20:46:16.431] [info] cpp-boilerplate 0.1.0 starting
 [2026-06-30 20:46:16.431] [info] field 0: alpha
@@ -306,26 +363,36 @@ $ /path/to/prefix/bin/cpp_boilerplate --version
 0.1.0
 ```
 
+The install is complete when both installed-binary commands succeed and `--version` prints the
+expected project version.
+
 ## IDE setup
 
 ### VS Code
 
-VS Code with CMake Tools will discover the checked-in public presets automatically after Conan
-generates `ConanPresets.json`. Run `make bootstrap` first.
+Prerequisite: run `make bootstrap` so Conan generates `ConanPresets.json`.
 
-Then open the folder, accept the recommended extensions, and select the matching public preset. For
-the checked-in launch configuration, choose the target you want in the CMake Tools sidebar and start
-`Debug: CMake Target`. F5 builds the selected debug target and launches it from `build/debug`.
+1. Open the project folder in VS Code.
+2. Accept the recommended extensions.
+3. Select the matching public preset in CMake Tools.
+4. Select a target in the CMake Tools sidebar.
+5. Start `Debug: CMake Target` or press F5.
+
+Setup is complete when F5 builds the selected debug target and launches it from `build/debug`.
 
 ### CLion
 
-CLion can use the same public presets. Run `make bootstrap` first, then in CLion:
+Prerequisite: run `make bootstrap` so Conan generates `ConanPresets.json`.
+
+In CLion:
 
 1. Open the project root
 2. Select the `debug`, `release`, `sanitize*`, or `coverage` preset as the active CMake profile
 3. Reload CMake
 
-<!-- prettier-ignore -->
+Setup is complete when CLion finishes reloading the selected public preset without a configure
+error.
+
 > [!NOTE]
 > No IDE-specific task files are required for the build. The presets are the source of truth.
 > `debug`, `sanitize`, and `coverage` each use their own build tree, so switching between them
