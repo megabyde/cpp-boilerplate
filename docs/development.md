@@ -179,8 +179,9 @@ allocation profile, which a boilerplate does not have. Three constraints make it
 link-line change here:
 
 - ASan installs its own `malloc`/`free` interceptors. An override linked on top of them either fails
-  to link or leaves the heap diagnostics silently disabled, so every `sanitize*` preset would have
-  to gate the allocator off.
+  to link or leaves the heap diagnostics silently disabled, so the `sanitize` and `sanitize-asan`
+  presets would have to gate the allocator off. UBSan does not replace the allocator, so
+  `sanitize-ubsan` can keep it.
 - The override mechanism is per platform. mimalloc's static override works on Linux; macOS needs
   runtime interposition through `DYLD_INSERT_LIBRARIES`; Windows needs `mimalloc-redirect.dll`
   beside the executable, which the `install(TARGETS)` rule does not ship.
@@ -190,7 +191,8 @@ link-line change here:
 To add one, follow the path the recipe already uses for optional tools: declare a Conan option in
 [`conanfile.py`](../conanfile.py), add the requirement under `requirements()`, forward the choice to
 CMake through `tc.cache_variables` next to the `ccache` and `mold`/LLD probes in `generate()`, and
-fail configuration when `compiler.sanitizer` is set. Rerun `make lock` afterwards.
+fail configuration when `compiler.sanitizer` is `Address` or `AddressUndefinedBehavior`. Rerun
+`make lock` afterwards.
 
 ## IDE setup
 
