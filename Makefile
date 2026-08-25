@@ -58,10 +58,10 @@ SANITIZE_STAMPS := \
 FORMAT_SOURCES = $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
 CMAKE_FORMAT_SOURCES = CMakeLists.txt
 TIDY_SOURCES = $(shell find src tests -type f -name '*.cpp')
-# Tracked Markdown/JSON/YAML only; conan.lock is Conan-generated, so its formatting is
-# Conan's, not prettier's.
-PRETTIER_SOURCES = $(shell git ls-files '*.md' '*.json' '*.yml' '*.yaml' ':!conan.lock')
-MARKDOWN_SOURCES = $(shell git ls-files '*.md')
+# Tracked Markdown/JSON/YAML only; conan.lock is Conan-generated, and CLAUDE.md is a symlink to
+# AGENTS.md. Format and lint the target once instead of passing the symlink explicitly to tools.
+PRETTIER_SOURCES = $(shell git ls-files '*.md' '*.json' '*.yml' '*.yaml' ':!conan.lock' ':!CLAUDE.md')
+MARKDOWN_SOURCES = $(shell git ls-files '*.md' ':!CLAUDE.md')
 PYTHON_SOURCES = scripts/ conanfile.py
 
 define require-tool
