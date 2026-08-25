@@ -64,11 +64,11 @@ fails the check and expects a manual merge.
 
 ## Template Invariants
 
-- `scripts/rename.py` is the instantiation path, and `.github/workflows/template.yml` renames the
-  template in CI, then builds, tests, and runs the result. A change that adds a file carrying the
-  project name, the namespace, an include path, or a GitHub link must teach the rename script about
-  it in the same change, or that workflow fails.
-- The rename script uses only the Python standard library. Keep it that way: it runs before any
+- The rename utility is the instantiation path, and the template workflow renames the repository in
+  CI, then builds, tests, and runs the result. A change that adds a file carrying the project name,
+  the namespace, an include path, or a GitHub link must teach the rename utility about it in the
+  same change, or that workflow fails.
+- The rename utility uses only the Python standard library. Keep it that way: it runs before any
   dependency is installed.
 - C++23 is the language floor (`cxx_std_23`), and the CMake floor is stated at the top of
   `CMakeLists.txt` with the feature that sets it. Raise either only with the reason recorded there.
@@ -79,5 +79,5 @@ fails the check and expects a manual merge.
 - Coverage stays at the floor. Exclude genuinely unreachable defensive code rather than lowering
   `COVERAGE_FAIL_UNDER`.
 - Documentation changed in the same commit when the change touches presets, make targets, flags,
-  the rename script, or the dependency set.
+  the rename utility, or the dependency set.
 - Commits follow Conventional Commits, and work reaches `main` through a pull request.
