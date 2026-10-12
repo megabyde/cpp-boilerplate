@@ -28,12 +28,18 @@ jobs:
       - uses: actions/checkout@v7
       # Tool pins live in .github/ci.env, shared across workflows
       - name: Load CI env
-        run: cat .github/ci.env >> "$GITHUB_ENV"
+        run: |
+          cat .github/ci.env >> "$GITHUB_ENV"
+          echo "RUNNER_IMAGE=$ImageOS-$ImageVersion" >> "$GITHUB_ENV"
       - run: sudo apt-get update && sudo apt-get install -y gcc-14 g++-14
       - uses: conan-io/setup-conan@v1
         with:
           version: ${{ env.CONAN_VERSION }}
-          cache_packages: true
+      - uses: actions/cache@v6
+        with:
+          path: ~/.conan2/p
+          key: conan-${{ env.CONAN_VERSION }}-rename-${{ env.RUNNER_IMAGE }}-${{ hashFiles('conan.lock', 'profiles/**', 'conan/**') }}
+          restore-keys: conan-${{ env.CONAN_VERSION }}-rename-${{ env.RUNNER_IMAGE }}-
       - name: Rename the template
         run: |
           python3 scripts/rename.py ci-smoke --github-owner tester
