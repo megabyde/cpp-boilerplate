@@ -28,7 +28,6 @@ extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size
         return 0;
     }
     const auto delimiter = static_cast<char>(data[0]);
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     const std::string_view record(reinterpret_cast<const char*>(data) + 1, size - 1);
 
     const auto fields = cpp_boilerplate::split_views_vec(record, delimiter);
