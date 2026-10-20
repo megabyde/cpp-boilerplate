@@ -31,8 +31,8 @@ class CppBoilerplateConan(ConanFile):
         # as platform-specific dependencies:
         #   if self.settings.os == "Windows":
         #       self.requires("...")
-        self.requires("spdlog/1.17.0")
-        self.requires("cli11/2.6.2")
+        self.requires("spdlog/[>=1.17.0 <2]")
+        self.requires("cli11/[>=2.6.2 <3]")
 
     def validate(self):
         # Reject profiles that select compiler.cppstd below C++23. CMake's cxx_std_23 feature
@@ -72,7 +72,7 @@ class CppBoilerplateConan(ConanFile):
         # environment, not pinned here.
         self.tool_requires("cmake/[>=3.29]")
         if self.options.with_tests:
-            self.test_requires("gtest/1.17.0")
+            self.test_requires("gtest/[>=1.17.0 <2]")
 
     def generate(self):
         # CMakeConfigDeps generates CMake CONFIG-mode find_package files under the build
