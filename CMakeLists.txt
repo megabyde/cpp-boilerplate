@@ -253,16 +253,21 @@ if(BUILD_TESTING)
 endif()
 
 # --- fuzzers ---------------------------------------------------------------
-# Every build defines the fuzzers, so they are in the compilation database clang-tidy reads, but
-# only BUILD_FUZZERS builds them and links libFuzzer's main().
-add_executable(split_fuzz EXCLUDE_FROM_ALL fuzz/split_fuzz.cpp)
-target_link_libraries(split_fuzz PRIVATE cpp_boilerplate_lib)
-enable_project_options(split_fuzz)
+# Without BUILD_FUZZERS, which links libFuzzer's main(), each fuzzer is an object library outside
+# the default build, so the compilation database clang-tidy reads still lists it
+function(add_fuzzer name source)
+    if(BUILD_FUZZERS)
+        add_executable(${name} ${source})
+        target_link_options(${name} PRIVATE -fsanitize=fuzzer)
+    else()
+        add_library(${name} OBJECT EXCLUDE_FROM_ALL ${source})
+    endif()
+    target_link_libraries(${name} PRIVATE cpp_boilerplate_lib)
+    enable_project_options(${name})
+endfunction()
+add_fuzzer(split_fuzz fuzz/split_fuzz.cpp)
 
 if(BUILD_FUZZERS)
-    set_target_properties(split_fuzz PROPERTIES EXCLUDE_FROM_ALL OFF)
-    target_link_options(split_fuzz PRIVATE -fsanitize=fuzzer)
-
     # A fixed number of inputs from a fixed seed, so the preset's test is deterministic; make
     # fuzz-run does the open-ended fuzzing. A failing input goes to the same directory as
     # fuzz-run's, which libFuzzer does not create.
