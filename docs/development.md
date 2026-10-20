@@ -57,10 +57,12 @@ Outcome: libFuzzer targets, built with ASan and UBSan, run for a fixed number of
 `split_fuzz` splits its input at the delimiter the first byte names and checks three properties:
 `split_views()` and `split_views_vec()` agree, an input with n delimiters gives n + 1 fields (none
 when it is empty), and joining the fields with the delimiter gives the input back. A new target is
-a `fuzz/*.cpp` file with an `EXCLUDE_FROM_ALL` executable in the fuzzers section of
-`CMakeLists.txt`, which `BUILD_FUZZERS` builds and links with libFuzzer, a CTest entry, and its name
-in `FUZZERS` in the `Makefile`. Every build defines the fuzzers without building them, so
-`make lint` checks them with the rest of the sources.
+a `fuzz/*.cpp` file with an `add_fuzzer()` call and a CTest entry in the fuzzers section of
+`CMakeLists.txt`, and its name in `FUZZERS` in the `Makefile`. Other presets define each fuzzer as an
+object library outside `all`, so it is in the debug compilation database and `make lint` checks it;
+only the `fuzz` preset links the executables. A target that includes LLVM's
+`<fuzzer/FuzzedDataProvider.h>` builds, but fails `make lint` in CI: the clang-tidy wheel CI pins
+has clang's resource headers without `fuzzer/`. Read the input bytes directly, as `split_fuzz` does.
 
 `make fuzz` builds the `fuzz` preset in `build/fuzz` and runs its CTest tests, 100,000 inputs from
 a fixed seed. `make fuzz-run` then fuzzes each target for `FUZZ_SECONDS`, 60 by default, keeps the
