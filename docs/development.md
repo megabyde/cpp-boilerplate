@@ -120,6 +120,28 @@ The update is complete when the selected build and test workflow passes and `con
 intended versions. `make lock-check`, which CI runs, fails when the lock no longer satisfies
 `conanfile.py` or keeps entries the graph does not use; a new upstream release does not fail it.
 
+## Dependency copies and caching
+
+Outcome: ccache keeps hitting when the Conan cache is rebuilt, locally and in CI.
+
+`make` installs each Conan configuration with the `full_deploy` deployer, which copies every
+dependency to `build/deps/<configuration>/full_deploy/` and points the generated CMake files there
+instead of into the Conan cache. Conan keeps a package it builds from source in a cache folder with
+a random name, so a rebuilt cache gives the compiler new include paths, and ccache, which hashes
+them, misses on every file that includes a dependency header. The copies keep the paths fixed.
+
+Each configuration gets its own folder because `full_deploy` names its subfolders by build type and
+architecture alone, which the sanitizer configurations share with `debug`. A tree installed before
+the copies keeps the cache paths until its next install, after a lock change or a `make clean`.
+
+The copies cost disk space and install time in proportion to the dependencies, a few megabytes for
+this template's. A project with much larger ones can drop `$(CONAN_DEPLOY)` from the `Makefile`'s
+`conan install` commands and go back to the cache paths.
+
+In CI, only pushes to `main` save the Conan cache and ccache; a pull request restores `main`'s and
+saves nothing. The Windows job and the template check run `conan install` without the deployer,
+since neither uses ccache.
+
 ## Formatting and linting
 
 Use `make format` to rewrite supported files in place:
