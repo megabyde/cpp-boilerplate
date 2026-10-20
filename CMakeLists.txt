@@ -24,6 +24,17 @@ option(WARNINGS_AS_ERRORS "Treat warnings as errors" ON)
 option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
 option(ENABLE_HARDENING "Enable hardening compile and link flags" ON)
 option(ENABLE_LTO "Enable link-time optimization for Release builds" ON)
+option(BUILD_FUZZERS "Build the libFuzzer targets, with every target under ASan and UBSan" OFF)
+
+# libFuzzer's coverage feedback and the sanitizers must reach the library the fuzzers call, and
+# everything that links it then needs the sanitizer runtimes. The fuzzers add libFuzzer's main().
+if(BUILD_FUZZERS)
+    add_compile_options(
+        -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=all
+        -fno-omit-frame-pointer
+    )
+    add_link_options(-fsanitize=fuzzer-no-link,address,undefined)
+endif()
 
 include(CheckIPOSupported)
 if(ENABLE_LTO)
@@ -238,5 +249,23 @@ if(BUILD_TESTING)
     set_tests_properties(
         AppTest.RejectsUnknownArgument PROPERTIES PASS_REGULAR_EXPRESSION
                                                   "argument was not expected: --bogus"
+    )
+endif()
+
+# --- fuzzers ---------------------------------------------------------------
+if(BUILD_FUZZERS)
+    add_executable(split_fuzz fuzz/split_fuzz.cpp)
+    target_link_libraries(split_fuzz PRIVATE cpp_boilerplate_lib)
+    target_link_options(split_fuzz PRIVATE -fsanitize=fuzzer)
+    enable_project_options(split_fuzz)
+
+    # A fixed number of inputs from a fixed seed, so the preset's test is deterministic; make
+    # fuzz-run does the open-ended fuzzing. A failing input goes to the same directory as
+    # fuzz-run's, which libFuzzer does not create.
+    enable_testing()
+    set(FUZZ_CRASHES ${PROJECT_BINARY_DIR}/crashes)
+    file(MAKE_DIRECTORY ${FUZZ_CRASHES})
+    add_test(NAME Fuzz.SplitRuns COMMAND split_fuzz -artifact_prefix=${FUZZ_CRASHES}/split_fuzz-
+                                         -runs=100000 -seed=1
     )
 endif()
