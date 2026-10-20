@@ -51,14 +51,25 @@ CONAN_PROFILE ?= profiles/default
 STAMP_DIR := build/.stamps
 COVERAGE_DIR := build/coverage
 COVERAGE_FAIL_UNDER ?= 100
+FUZZ_DIR := build/fuzz
+FUZZ_SECONDS ?= 60
+FUZZERS := split_fuzz
+# libFuzzer ships with LLVM's Clang, not with AppleClang or GCC: macOS uses Homebrew's LLVM
+ifeq ($(UNAME_S),Darwin)
+FUZZ_CC ?= $(HOMEBREW_LLVM_PREFIX)/bin/clang
+FUZZ_CXX ?= $(HOMEBREW_LLVM_PREFIX)/bin/clang++
+else
+FUZZ_CC ?= clang
+FUZZ_CXX ?= clang++
+endif
 SANITIZE_STAMPS := \
 	$(STAMP_DIR)/sanitize.stamp \
 	$(STAMP_DIR)/sanitize-asan.stamp \
 	$(STAMP_DIR)/sanitize-ubsan.stamp \
 	$(STAMP_DIR)/sanitize-tsan.stamp
-FORMAT_SOURCES = $(shell find include src tests -type f \( -name '*.hpp' -o -name '*.cpp' \))
+FORMAT_SOURCES = $(shell find include src tests fuzz -type f \( -name '*.hpp' -o -name '*.cpp' \))
 CMAKE_FORMAT_SOURCES = CMakeLists.txt
-TIDY_SOURCES = $(shell find src tests -type f -name '*.cpp')
+TIDY_SOURCES = $(shell find src tests fuzz -type f -name '*.cpp')
 # Tracked Markdown/JSON/YAML only; conan.lock is Conan-generated, so its formatting is
 # Conan's, not prettier's.
 PRETTIER_SOURCES = $(shell git ls-files '*.md' '*.json' '*.yml' '*.yaml' ':!conan.lock')
@@ -144,6 +155,18 @@ sanitize-tsan: ## Build and test via the TSan workflow preset
 
 .PHONY: coverage
 coverage: coverage-data-clean ## Build and test via the coverage workflow preset
+
+.PHONY: fuzz
+fuzz: $(STAMP_DIR)/debug.stamp ## Build the fuzzers with FUZZ_CC and FUZZ_CXX and run their tests
+	CC="$(FUZZ_CC)" CXX="$(FUZZ_CXX)" cmake --workflow --preset fuzz
+
+.PHONY: fuzz-run
+fuzz-run: fuzz ## Run each fuzzer for FUZZ_SECONDS, keeping its corpus under build/fuzz/corpus
+	set -e; for fuzzer in $(FUZZERS); do \
+		mkdir -p $(FUZZ_DIR)/corpus/$$fuzzer $(FUZZ_DIR)/crashes; \
+		$(FUZZ_DIR)/$$fuzzer -max_total_time=$(FUZZ_SECONDS) \
+			-artifact_prefix=$(FUZZ_DIR)/crashes/$$fuzzer- $(FUZZ_DIR)/corpus/$$fuzzer; \
+	done
 
 .PHONY: docs
 docs: $(STAMP_DIR)/debug.stamp ## Generate Doxygen HTML documentation

@@ -49,6 +49,39 @@ Sanitizer runtime options such as `halt_on_error` and `print_stacktrace` live un
 `profiles/sanitize-common`. Conan injects them into the generated test presets inherited by the
 public `sanitize*` presets, keeping the runtime configuration out of `CMakePresets.json`.
 
+## Fuzzing
+
+Outcome: libFuzzer targets, built with ASan and UBSan, run for a fixed number of inputs by
+`make fuzz` and for a time limit by `make fuzz-run`.
+
+`split_fuzz` splits its input at the delimiter the first byte names and checks three properties:
+`split_views()` and `split_views_vec()` agree, an input with n delimiters gives n + 1 fields (none
+when it is empty), and joining the fields with the delimiter gives the input back. A new target is
+a `fuzz/*.cpp` file with an `EXCLUDE_FROM_ALL` executable in the fuzzers section of
+`CMakeLists.txt`, which `BUILD_FUZZERS` builds and links with libFuzzer, a CTest entry, and its name
+in `FUZZERS` in the `Makefile`. Every build defines the fuzzers without building them, so
+`make lint` checks them with the rest of the sources.
+
+`make fuzz` builds the `fuzz` preset in `build/fuzz` and runs its CTest tests, 100,000 inputs from
+a fixed seed. `make fuzz-run` then fuzzes each target for `FUZZ_SECONDS`, 60 by default, keeps the
+inputs that reach new code in `build/fuzz/corpus/<target>`, and writes an input that fails to
+`build/fuzz/crashes/`; `build/fuzz/<target> <file>` replays it. CI runs `make fuzz-run` on Linux and
+uploads any failing input.
+
+libFuzzer comes with LLVM's Clang, so the toolchain depends on the platform:
+
+| Platform | Toolchain                                                                             |
+| -------- | ------------------------------------------------------------------------------------- |
+| Linux    | Clang and its compiler-rt; CI uses Ubuntu's `clang-19` and `libclang-rt-19-dev`       |
+| macOS    | Homebrew LLVM (`brew install llvm`), the default; AppleClang has no libFuzzer runtime |
+| GCC      | Not supported: GCC has no libFuzzer                                                   |
+| Windows  | Not supported: MSVC has `/fsanitize=fuzzer`, but the preset passes Clang flags        |
+
+`FUZZ_CC` and `FUZZ_CXX` name the compiler, `clang` and `clang++` by default on Linux:
+`make fuzz FUZZ_CC=clang-19 FUZZ_CXX=clang++-19`. The preset reuses the debug Conan toolchain with
+the tests turned off, so the dependencies stay as the default compiler built them and only
+first-party code is instrumented. It compiles at `-O1`.
+
 ## Tests
 
 Tests are controlled by CMake's built-in `BUILD_TESTING` option from `include(CTest)`. This project
@@ -58,9 +91,9 @@ leaves it at the default `ON`, so `make debug`, `make release`, `make sanitize*`
 ## Public presets
 
 The main workflow presets are `debug`, `release`, `sanitize`, `sanitize-asan`, `sanitize-ubsan`,
-`sanitize-tsan`, and `coverage`. Configure, build, and test presets use the same names. `docs` is
-configure/build only because it generates Doxygen HTML instead of compiling and testing the
-application.
+`sanitize-tsan`, `coverage`, and `fuzz`. Configure, build, and test presets use the same names.
+`docs` is configure/build only because it generates Doxygen HTML instead of compiling and testing
+the application.
 
 The Conan-generated `conan-*` presets are internal implementation details and are not the public
 interface for developers or CI.
